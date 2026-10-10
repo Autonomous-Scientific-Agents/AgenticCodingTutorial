@@ -1,6 +1,6 @@
 # Agentic Coding: Basics and Best Practices for Scientific Teams
 
-*Genesis Mission Platform — Foundations session F5 · session lead: Murat Keçeli*
+*Genesis Mission Platform — Foundations session F5 · October 15, 2026
 
 Build with tests, make it fast, give it a face: one scientific problem, three coding agents.
 
