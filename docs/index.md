@@ -19,8 +19,11 @@ Build with tests, make it fast, give it a face: one scientific problem, three co
 ## Where to go next
 
 - [Getting started](getting-started.md): pick one tool and begin.
+- [Run in a container](container.md): every tool and editor in one image; the agent only sees your project.
 - [Best practices](best-practices.md): the habits and the evidence behind them.
 - [Tools cheat sheet](tools.md): the same move in each tool.
 - [Models and budget](models.md): how to choose, and how to see what you spend.
-- [Hands-on lab](lab.md): the point-group classifier, step by step.
+- [Hands-on lab](lab.md): the point-group classifier, with the demo repositories.
 - [Helpers](helpers.md): who to ask, and about what.
+
+Model access for Genesis Mission teams: [AmSC Model Access Gateway (MAG)](https://docs.amsc.energy.gov/model-access-gateway/).

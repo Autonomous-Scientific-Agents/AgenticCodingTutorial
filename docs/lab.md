@@ -1,24 +1,34 @@
 # Hands-on lab: the point-group classifier
 
-Classify the point group of a molecule from its Cartesian coordinates. The repository starts with a stub and
-94 tests (91 failing): 60 molecules across 40 point groups plus challenge cases — random orientations, permuted
-atoms, H vs D isotopes, noise, and tolerance edge cases. Every expected label was cross-checked against pymatgen.
+Build a Python package that reads a molecule's XYZ file and returns its Schoenflies point group
+(`H2O_C2v.xyz` → `C2v`). The specification is a single `AGENTS.md`; the acceptance tests are the XYZ files in
+`core_xyz/`, from H₂ to ferrocene, B₁₂H₁₂ (Ih) and cubane (Oh). The package must get every one right using only
+the coordinates, without hard-coding filenames or formulas.
 
-!!! note
-    The link to the lab repository will be posted here before the session.
+## Demo repositories
 
-| Step | You do | Checkpoint | min |
-|---|---|---|---|
-| 0 | git clone …/pointgroup; git checkout v0-spec; uv sync; uv run pytest → 91 failures. Pick Claude Code, OpenCode or Codex (or Cursor / Kilo Code). | agent explains the failing tests | 5 |
-| 1 | Build with tests: one prompt; do not help; watch the loop. Reject one questionable change in the diff. | pytest green; commit | 20 |
-| 2 | Instructions: /init (or equivalent), cut to < 60 lines, add “run pytest before done”. | fewer exploratory tool calls on a re-run | 10 |
-| 3 | Make it fast: ask for a profile on bench/, then one optimisation. Tests must stay green. Write a benchmark skill. | ≥ 5× on the batch benchmark | 15 |
-| 4 | Give it a face: one prompt for a Streamlit app; approve or deny install/port requests deliberately. | app runs locally | 15 |
-| 5 | Memory & stretch: audit auto-memory, promote one fact; open the repo in a second tool; add a hook that blocks writes outside the repo. | second tool reads AGENTS.md | 10 |
+| Repository | What it is |
+|---|---|
+| [keceli/claude-pgmol](https://github.com/keceli/claude-pgmol) | **Start here.** `main` holds only the specification (`AGENTS.md`) and the `core_xyz/` fixtures. The branch [`feat/point-group-detection`](https://github.com/keceli/claude-pgmol/tree/feat/point-group-detection) is the package Claude Code built from it, with independent-review fixes and a harder `challenge_xyz/` set. |
+| [Autonomous-Scientific-Agents/PGMol](https://github.com/Autonomous-Scientific-Agents/PGMol) | A finished implementation from the same specification: `pgmol` package, CLI, tests and CI. Compare it with yours. |
 
-Stuck? Check out the next tag (`v1-passing`, `v2-fast`, `v3-gui`) and carry on.
+## Steps
 
 ```bash
-uv sync
-uv run pytest        # the tests are the contract: do not edit tests/
+git clone https://github.com/keceli/claude-pgmol.git
+cd claude-pgmol
+/path/to/run.sh            # optional: work inside the tutorial container
+claude                     # or codex, opencode
 ```
+
+| Step | You do | Checkpoint |
+|---|---|---|
+| 1 | Read `AGENTS.md` yourself first. What is the goal, what are the limits, how is success checked? | you can state the success criterion |
+| 2 | Ask the agent for a plan before any code. Approve or correct it. | a plan you agree with |
+| 3 | Let it build, one step per prompt. Read every diff; commit each green step. | all `core_xyz/` fixtures pass |
+| 4 | Verify the verifier: try rotated and shuffled copies of a molecule, and a few `challenge_xyz/` files from the branch. | failures you understand |
+| 5 | Review with a second tool or model; ask it to find defects, then fix them with tests. | review findings fixed |
+| 6 | Stretch: profile on a large molecule and speed it up, or add a small GUI, keeping the tests green. | before/after numbers, or an app |
+
+Compare your result with the `feat/point-group-detection` branch and with PGMol: same specification, different
+code.

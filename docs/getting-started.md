@@ -22,6 +22,13 @@ and those files live in your repository, so switching later costs nothing.
 
 ## Install
 
+!!! tip "Easiest and safest: the tutorial container"
+    One image has Claude Code, Codex CLI, OpenCode, uv, vim, emacs and VS Code in the browser. The agent only sees
+    the project folder you mount, so it cannot touch the rest of your machine.
+    See [Run in a container](container.md).
+
+Or install the tools directly:
+
 ```bash
 # Claude Code
 curl -fsSL https://claude.ai/install.sh | bash
@@ -39,6 +46,11 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Cursor is a desktop application ([cursor.com](https://cursor.com)); Kilo Code is an extension for VS Code and
 JetBrains IDEs ([kilocode.ai](https://kilocode.ai)). Check each tool's documentation for other installers.
 
-!!! tip "Using DOE or ALCF model endpoints"
-    The [ALCF Inference Endpoints documentation](https://docs.alcf.anl.gov/services/inference-endpoints)
-    describes how to point coding agents at open-weight models hosted on ALCF hardware.
+## Model access
+
+The steps above work with any model provider. Genesis Mission teams can get model access through the
+[AmSC Model Access Gateway (MAG)](https://docs.amsc.energy.gov/model-access-gateway/), which explains how to
+request access, create a personal access token, and connect Claude Code and Codex CLI.
+
+The [ALCF Inference Endpoints documentation](https://docs.alcf.anl.gov/services/inference-endpoints)
+describes how to point coding agents at open-weight models hosted on ALCF hardware.

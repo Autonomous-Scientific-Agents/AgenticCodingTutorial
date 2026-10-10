@@ -40,7 +40,14 @@ Compare scores only when the harness and the data split are the same.
 
 ## DOE and ALCF resources
 
+- [AmSC Model Access Gateway (MAG)](https://docs.amsc.energy.gov/model-access-gateway/) — model access for Genesis Mission teams: account, project, personal access token, and setup for Claude Code and Codex CLI.
 - [ALCF Inference Endpoints](https://docs.alcf.anl.gov/services/inference-endpoints) — open-weight models on ALCF hardware, including setup for coding agents; examples in [argonne-lcf/inference-endpoints](https://github.com/argonne-lcf/inference-endpoints).
+
+## Tutorial container
+
+- `ghcr.io/autonomous-scientific-agents/agentic-coding` — Claude Code, Codex CLI, OpenCode, uv, vim, emacs and VS Code
+  in the browser. Instructions: [Run in a container](container.md)
+  (`Dockerfile`, `run.sh` and `.devcontainer/` in this repository).
 
 ## Evidence worth reading
 

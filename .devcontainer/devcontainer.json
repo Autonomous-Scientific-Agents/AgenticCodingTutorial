@@ -1,0 +1,27 @@
+{
+  // Copy this folder into your own project, then in VS Code run
+  // "Dev Containers: Reopen in Container". Your project opens inside the agents container.
+  "name": "Agentic coding",
+  "image": "ghcr.io/autonomous-scientific-agents/agentic-coding:latest",
+  "remoteUser": "dev",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=ai-agents-claude,target=/home/dev/.claude,type=volume",
+    "source=ai-agents-codex,target=/home/dev/.codex,type=volume",
+    "source=ai-agents-opencode,target=/home/dev/.local/share/opencode,type=volume"
+  ],
+  "remoteEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    "ANTHROPIC_AUTH_TOKEN": "${localEnv:ANTHROPIC_AUTH_TOKEN}",
+    "ANTHROPIC_BASE_URL": "${localEnv:ANTHROPIC_BASE_URL}",
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+    "OPENAI_BASE_URL": "${localEnv:OPENAI_BASE_URL}",
+    "OPENROUTER_API_KEY": "${localEnv:OPENROUTER_API_KEY}"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"]
+    }
+  }
+}
