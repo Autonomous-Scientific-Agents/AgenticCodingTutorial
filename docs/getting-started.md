@@ -11,8 +11,11 @@ and those files live in your repository, so switching later costs nothing.
 
 1. **Pick one tool and install it.** Any of the five. If your site provides model access, start with a tool
    that supports it.
-2. **Let it draft `AGENTS.md`.** `/init` writes a first version from your repository, or draft it with a chat
-   assistant. Cut it to under 60 lines: commands, rules, no-go zones.
+2. **Say what you want, and how you will check it.** This is where careful thought pays off most. Before you
+   prompt, decide the goal, the limits (what must not change, which dependencies are allowed) and the check that
+   proves it worked: a test, a known value, a reference result, a plot you know how to read. Put all of that in the
+   prompt. If you find yourself repeating the same instructions, move them into `AGENTS.md`; it helps you be
+   specific, but you do not need one to start.
 3. **Start small and checkable.** A test, a docstring with units, a plot — on a real repository, with a commit
    before you prompt.
 4. **Review the diff, commit, repeat.** One step per prompt.
