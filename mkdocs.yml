@@ -1,0 +1,54 @@
+site_name: Agentic Coding Tutorial
+site_description: Basics and best practices of agentic coding for scientific teams
+site_url: https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/
+repo_url: https://github.com/Autonomous-Scientific-Agents/AgenticCodingTutorial
+repo_name: AgenticCodingTutorial
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.sections
+    - content.code.copy
+    - content.action.edit
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: black
+      accent: light blue
+      toggle: {icon: material/brightness-7, name: Dark mode}
+    - scheme: slate
+      primary: black
+      accent: light blue
+      toggle: {icon: material/brightness-4, name: Light mode}
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Best practices: best-practices.md
+  - Tools cheat sheet: tools.md
+  - Models and budget: models.md
+  - Hands-on lab: lab.md
+  - Helpers: helpers.md
+  - Resources: resources.md
+  - Contributing: contributing.md
+
+hooks:
+  - hooks/helpers.py
+
+watch:
+  - data
+
+extra:
+  # How helper emails appear on the public site: link | obfuscated | hidden
+  helper_emails: obfuscated
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.details
