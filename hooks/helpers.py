@@ -20,6 +20,6 @@ def on_page_markdown(markdown, page, config, files):
     rest = sorted((p for p in people if not p.get("lead")), key=lambda p: p["name"].split()[-1].lower())
     rows = ["| Name | Ask me about |", "|---|---|"]
     for p in lead + rest:
-        topics = ", ".join(p.get("topics") or []) or "*coming soon*"
+        topics = ", ".join(p.get("topics") or [])
         rows.append(f"| [{p['name']}](mailto:{p['email']}) | {topics} |")
     return markdown.replace(MARK, "\n".join(rows))
