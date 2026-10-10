@@ -40,9 +40,6 @@ hooks:
 watch:
   - data
 
-extra:
-  # How helper emails appear on the public site: link | obfuscated | hidden
-  helper_emails: obfuscated
 
 markdown_extensions:
   - admonition

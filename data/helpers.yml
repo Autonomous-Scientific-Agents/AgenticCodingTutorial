@@ -1,6 +1,6 @@
 # Session helpers. To add or edit your entry, open a pull request that changes only your own block.
-# Fields: name, email, team (optional, e.g. AmSC, DBS, BPSW), topics (tools and research areas
-# people can ask you about), lead: true for the session lead.
+# Fields: name, email (your name links to it), topics (tools and research areas people can ask
+# you about). `lead: true` only puts that entry first in the list.
 - name: Murat Keceli
   email: keceli@anl.gov
   lead: true
@@ -10,7 +10,6 @@
   topics: []
 - name: David Martin
   email: demartin@lbl.gov
-  team: AmSC
   topics: []
 - name: Frederic Suter
   email: suterf@ornl.gov
@@ -20,40 +19,33 @@
   topics: []
 - name: Jose Miguel Munoz
   email: josemm@mit.edu
-  team: AmSC
   topics: []
 - name: Krishnan Raghavan
   email: kraghavan@anl.gov
   topics: []
 - name: Le Chen
   email: lechen@anl.gov
-  team: DBS
   topics: []
 - name: Malachi Schram
   email: malachi.schram@pnnl.gov
-  team: DBS
   topics: []
 - name: Nathan Tallent
   email: nathan.tallent@pnnl.gov
-  team: BPSW
   topics: []
 - name: Rafael Zamora-Resendiz
   email: rzamoraresendiz@lbl.gov
   topics: []
 - name: Sam Foreman
   email: foremans@anl.gov
-  team: AmSC
   topics: []
 - name: Stephen Hudson
   email: shudson@anl.gov
-  team: AmSC
   topics: []
 - name: Tanwi Mallick
   email: tmallick@anl.gov
   topics: []
 - name: Whitney Armstrong
   email: warmstrong@anl.gov
-  team: AmSC
   topics: []
 - name: Thang Pham
   email: tpham@anl.gov

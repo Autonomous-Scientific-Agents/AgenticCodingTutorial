@@ -12,7 +12,6 @@ Small pull requests are best: one topic per PR.
 ```yaml
 - name: Your Name
   email: you@lab.gov
-  team: AmSC          # optional
   topics: [Codex, Kokkos, climate modelling]
 ```
 
