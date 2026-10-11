@@ -49,13 +49,13 @@
   topics: []
 - name: Thang Pham
   email: tpham@anl.gov
-  topics: []
+  topics: [Codex,Claude Code, Materials Science]
 - name: Alvaro Mayagoitia
   email: vama@anl.gov
-  topics: []
+  topics: [OpenCode, KiloCode, Materials Science]
 - name: Bella Yang
   email: bellayang@anl.gov
   topics: []
 - name: Nesar Ramachandra
   email: nramachandra@anl.gov
-  topics: []
+  topics: [Claude Code, Cosmology]
