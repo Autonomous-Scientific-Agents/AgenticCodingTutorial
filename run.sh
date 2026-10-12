@@ -51,6 +51,12 @@ if [[ "$("$ENGINE" --version 2>/dev/null)" == podman* ]] \
   args+=(--userns=keep-id:uid=1000,gid=1000)
 elif [[ "$(uname -s)" == Linux && "$(id -u)" != 0 && "$(id -u):$(id -g)" != 1000:1000 ]]; then
   # entrypoint.sh renumbers dev to this UID/GID, then drops from root to dev.
+  # An image from before entrypoint.sh existed would just stay root, so refuse to use it.
+  if "$ENGINE" image inspect "$IMAGE" >/dev/null 2>&1 \
+      && [[ "$("$ENGINE" image inspect -f '{{.Config.Entrypoint}}' "$IMAGE")" != *entrypoint.sh* ]]; then
+    echo "run.sh: your copy of $IMAGE is out of date; update it with: $ENGINE pull $IMAGE" >&2
+    exit 1
+  fi
   args+=(--user 0:0 -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)")
 fi
 

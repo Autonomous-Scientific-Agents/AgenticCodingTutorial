@@ -10,8 +10,6 @@
 # agent config and login state persist in named volumes.
 #
 # Uses docker if it is installed, otherwise podman. Force one with $env:CONTAINER_ENGINE = "podman".
-$ErrorActionPreference = 'Stop'
-
 $Image = if ($env:IMAGE) { $env:IMAGE } else { 'ghcr.io/autonomous-scientific-agents/agentic-coding:latest' }
 $Port = if ($env:PORT) { $env:PORT } else { '8080' }
 

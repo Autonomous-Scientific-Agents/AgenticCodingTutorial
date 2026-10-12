@@ -99,6 +99,8 @@ The script passes these variables from your shell into the container when they a
 ## Tips
 
 - Commit before you prompt: the container protects your machine, git protects your project.
+- Get the newest image with `docker pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest`; the run
+  script does not update it on its own. Do this whenever you download a newer run script.
 - Use another port with `PORT=8081 /path/to/run.sh code` (PowerShell: `$env:PORT = "8081"` first).
 - Reset all saved logins and settings: `docker volume rm ai-agents-claude ai-agents-codex ai-agents-opencode ai-agents-opencode-config ai-agents-code-server`.
 - On Linux the script makes `dev` use your own user and group ID, so files the agent writes in the project
