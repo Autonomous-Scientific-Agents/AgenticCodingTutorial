@@ -15,6 +15,7 @@ Kilo Code), choosing a model and a budget, the hands-on lab, and the list of hel
 | Claude Code | [code.claude.com/docs](https://code.claude.com/docs/en/quickstart) · [cost tracking](https://code.claude.com/docs/en/costs) | proprietary |
 | Codex CLI | [developers.openai.com/codex](https://developers.openai.com/codex) | [openai/codex](https://github.com/openai/codex) |
 | OpenCode | [opencode.ai/docs](https://opencode.ai/docs/) · [agents](https://opencode.ai/docs/agents/) · [rules](https://opencode.ai/docs/rules/) · [skills](https://opencode.ai/docs/skills/) · [permissions](https://opencode.ai/docs/permissions/) | open source |
+|  OpenCode V2  | [opencode.ai/v2/docs](https://opencode.ai/v2/docs)  | open source  |
 | Cursor | [cursor.com/docs](https://cursor.com/docs) | proprietary |
 | Kilo Code | [kilocode.ai/docs](https://kilocode.ai/docs) | [Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode) |
 | uv (Python projects) | [docs.astral.sh/uv](https://docs.astral.sh/uv/) | [astral-sh/uv](https://github.com/astral-sh/uv) |
@@ -39,6 +40,8 @@ Kilo Code), choosing a model and a budget, the hands-on lab, and the list of hel
 - [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) · [MCP Registry](https://registry.modelcontextprotocol.io/) · [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) — MCP servers.
 - [ChemGraph](https://github.com/argonne-lcf/ChemGraph) — computational chemistry agent with an MCP server.
 - [claude-replay](https://github.com/Autonomous-Scientific-Agents/claude-replay) — turn an agent session into an HTML replay.
+- [ai4s-skills]((https://github.com/ai4s-research/ai4s-skills) - skill collection, alternative to Claude Science
+- [claude-scholar](https://github.com/Galaxy-Dawn/claude-scholar) - skill collection for research
 - More, with setup for each tool: [Skills and MCP](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/skills-mcp/).
 
 ## Benchmarks: how to read a leaderboard
@@ -51,6 +54,7 @@ Kilo Code), choosing a model and a budget, the hands-on lab, and the list of hel
 | [SWE-bench-Live](https://swe-bench-live.github.io/) | continuously added tasks in many languages |
 | [Vals.ai](https://www.vals.ai/benchmarks) | independent re-runs with cost and time per task |
 | [Artificial Analysis](https://artificialanalysis.ai/leaderboards/models) | the same tests on every model, with price and cost per task |
+| [ResearchClawBench](https://internscience.github.io/ResearchClawBench-Home/)| end-to-end auto research benchmarks (chemistry, physics, etc.) |
 
 Compare scores only when the harness and the data split are the same.
 
