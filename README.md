@@ -63,7 +63,7 @@ Compare scores only when the harness and the data split are the same.
 
 - `ghcr.io/autonomous-scientific-agents/agentic-coding` — Claude Code, Codex CLI, OpenCode, uv, vim, emacs and VS Code
   in the browser. Instructions: [Run in a container](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/container/)
-  (`Dockerfile`, `run.sh` and `.devcontainer/` in this repository).
+  (`Dockerfile`, `run.sh`, `run.ps1` and `.devcontainer/` in this repository).
 
 ## Evidence worth reading
 
@@ -78,7 +78,7 @@ cd my-project && /path/to/run.sh      # shell with claude, codex, opencode, uv, 
 ```
 
 Details: [Run in a container](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/container/).
-The image is rebuilt and pushed to GHCR by `.github/workflows/container.yml` when the `Dockerfile` changes.
+The image is rebuilt and pushed to GHCR by `.github/workflows/container.yml` when the `Dockerfile` or `entrypoint.sh` changes. On Windows use `run.ps1` from PowerShell instead of `run.sh`.
 
 ## Build the site locally
 

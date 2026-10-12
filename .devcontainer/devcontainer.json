@@ -9,7 +9,8 @@
   "mounts": [
     "source=ai-agents-claude,target=/home/dev/.claude,type=volume",
     "source=ai-agents-codex,target=/home/dev/.codex,type=volume",
-    "source=ai-agents-opencode,target=/home/dev/.local/share/opencode,type=volume"
+    "source=ai-agents-opencode,target=/home/dev/.local/share/opencode,type=volume",
+    "source=ai-agents-opencode-config,target=/home/dev/.config/opencode,type=volume"
   ],
   "remoteEnv": {
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
