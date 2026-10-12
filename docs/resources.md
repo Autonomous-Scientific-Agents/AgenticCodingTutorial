@@ -25,6 +25,14 @@
 - [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) — reusable skills, with setup notes for OpenCode.
 - [ccusage](https://github.com/ryoppippi/ccusage) — token and cost reports from local agent logs (`npx ccusage@latest daily`).
 
+## Skills and MCP servers
+
+- [anthropics/skills](https://github.com/anthropics/skills) · [openai/skills](https://github.com/openai/skills) · [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) — skill collections.
+- [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) · [MCP Registry](https://registry.modelcontextprotocol.io/) · [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) — MCP servers.
+- [ChemGraph](https://github.com/argonne-lcf/ChemGraph) — computational chemistry agent with an MCP server.
+- [claude-replay](https://github.com/Autonomous-Scientific-Agents/claude-replay) — turn an agent session into an HTML replay.
+- More, with setup for each tool: [Skills and MCP](skills-mcp.md).
+
 ## Benchmarks: how to read a leaderboard
 
 | Site | What it measures |
