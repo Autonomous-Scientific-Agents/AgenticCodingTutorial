@@ -1,8 +1,9 @@
 # Run the agents in a container
 
 The tutorial container has everything you need for the session:
-Claude Code, Codex CLI and OpenCode, plus [uv](https://docs.astral.sh/uv/), git, Python 3, the terminal
-editors vim, emacs and nano, and VS Code in the browser ([code-server](https://github.com/coder/code-server)).
+Claude Code, Codex CLI and OpenCode, plus [uv](https://docs.astral.sh/uv/), git, the
+[GitHub CLI](https://cli.github.com/) (`gh`), Python 3, the terminal editors vim, emacs and nano, and
+VS Code in the browser ([code-server](https://github.com/coder/code-server)).
 
 !!! success "Why a container is a safe place for an agent"
     The agent can only see the project folder you mount into it. It cannot read your home directory,
@@ -92,6 +93,8 @@ The script passes these variables from your shell into the container when they a
 - **Subscription login:** run `claude` or `codex` and follow the login prompt. Logins and settings are stored in
   named volumes, so you sign in once. That covers `~/.claude` (including `.claude.json`: sign-in, trusted
   folders and MCP servers), `~/.codex`, and OpenCode's `~/.config/opencode` and `~/.local/share/opencode`.
+- **GitHub CLI:** run `gh auth login` in the container to open pull requests and issues with `gh`. This sign-in
+  is not stored in a volume, so repeat it when you start a new container.
 - **Genesis Mission teams:** the [AmSC Model Access Gateway (MAG)](https://docs.amsc.energy.gov/model-access-gateway/)
   explains how to get access and a personal access token, and how to point Claude Code and Codex at it.
   Set the variables it describes on your host before starting the container.

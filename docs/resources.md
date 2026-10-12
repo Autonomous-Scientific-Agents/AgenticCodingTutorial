@@ -57,7 +57,7 @@ Compare scores only when the harness and the data split are the same.
 
 ## Tutorial container
 
-- `ghcr.io/autonomous-scientific-agents/agentic-coding` — Claude Code, Codex CLI, OpenCode, uv, vim, emacs and VS Code
+- `ghcr.io/autonomous-scientific-agents/agentic-coding` — Claude Code, Codex CLI, OpenCode, uv, gh, vim, emacs and VS Code
   in the browser. Instructions: [Run in a container](container.md)
   (`Dockerfile`, `run.sh` and `.devcontainer/` in this repository).
 

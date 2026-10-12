@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Start the agents container with the current directory mounted at /workspace.
 #
-#   ./run.sh                 interactive bash shell (claude, codex, opencode, uv, vim, emacs)
+#   ./run.sh                 interactive bash shell (claude, codex, opencode, uv, gh, vim, emacs)
 #   ./run.sh claude          run one command directly, e.g. claude, codex, opencode
 #   ./run.sh code            VS Code in the browser at http://localhost:8080
 #   ./run.sh build           build the image locally instead of pulling it

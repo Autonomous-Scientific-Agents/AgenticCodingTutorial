@@ -66,7 +66,7 @@ Compare scores only when the harness and the data split are the same.
 
 ## Tutorial container
 
-- `ghcr.io/autonomous-scientific-agents/agentic-coding` — Claude Code, Codex CLI, OpenCode, uv, vim, emacs and VS Code
+- `ghcr.io/autonomous-scientific-agents/agentic-coding` — Claude Code, Codex CLI, OpenCode, uv, gh, vim, emacs and VS Code
   in the browser. Instructions: [Run in a container](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/container/)
   (`Dockerfile`, `run.sh`, `run.ps1` and `.devcontainer/` in this repository).
 
@@ -78,7 +78,7 @@ Compare scores only when the harness and the data split are the same.
 
 ```bash
 docker pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest
-cd my-project && /path/to/run.sh      # shell with claude, codex, opencode, uv, vim, emacs
+cd my-project && /path/to/run.sh      # shell with claude, codex, opencode, uv, gh, vim, emacs
 /path/to/run.sh code                  # VS Code in the browser at http://localhost:8080
 ```
 

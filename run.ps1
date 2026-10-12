@@ -1,7 +1,7 @@
 # Start the agents container with the current directory mounted at /workspace.
 # PowerShell version of run.sh, for Windows.
 #
-#   .\run.ps1                interactive bash shell (claude, codex, opencode, uv, vim, emacs)
+#   .\run.ps1                interactive bash shell (claude, codex, opencode, uv, gh, vim, emacs)
 #   .\run.ps1 claude         run one command directly, e.g. claude, codex, opencode
 #   .\run.ps1 code           VS Code in the browser at http://localhost:8080
 #   .\run.ps1 build          build the image locally instead of pulling it
