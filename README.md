@@ -39,8 +39,9 @@ Kilo Code), choosing a model and a budget, the hands-on lab, and the list of hel
 - [anthropics/skills](https://github.com/anthropics/skills) · [openai/skills](https://github.com/openai/skills) · [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) — skill collections.
 - [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) · [MCP Registry](https://registry.modelcontextprotocol.io/) · [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) — MCP servers.
 - [ChemGraph](https://github.com/argonne-lcf/ChemGraph) — computational chemistry agent with an MCP server.
+- [AtomisticSkills](https://github.com/learningmatter-mit/AtomisticSkills) - atomisticskills computational chemistry skills.
 - [claude-replay](https://github.com/Autonomous-Scientific-Agents/claude-replay) — turn an agent session into an HTML replay.
-- [ai4s-skills]((https://github.com/ai4s-research/ai4s-skills) - skill collection, alternative to Claude Science
+- [ai4s-skills](https://github.com/ai4s-research/ai4s-skills) - skill collection, alternative to Claude Science
 - [claude-scholar](https://github.com/Galaxy-Dawn/claude-scholar) - skill collection for research
 - More, with setup for each tool: [Skills and MCP](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/skills-mcp/).
 
