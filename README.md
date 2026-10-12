@@ -63,6 +63,8 @@ Compare scores only when the harness and the data split are the same.
 
 - [AmSC Model Access Gateway (MAG)](https://docs.amsc.energy.gov/model-access-gateway/) — model access for Genesis Mission teams: account, project, personal access token, and setup for Claude Code and Codex CLI.
 - [ALCF Inference Endpoints](https://docs.alcf.anl.gov/services/inference-endpoints) — open-weight models on ALCF hardware, including setup for coding agents; examples in [argonne-lcf/inference-endpoints](https://github.com/argonne-lcf/inference-endpoints).
+- [Vibe Coding with Argo](https://anl.box.com/s/hxc72dkm0a8mlmo7ownfl4ixwx6iu3ko) - anl.box.com document with instructions to start vibe coding at ANL.
+- [Argo Gateway API documentation](https://anl.box.com/s/ubtrsefonqeo9xppdzcurezy8rzsbs96) - documentation to configure local end points.
 
 ## Tutorial container
 
