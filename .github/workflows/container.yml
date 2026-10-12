@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - Dockerfile
+      - entrypoint.sh
       - .github/workflows/container.yml
   workflow_dispatch:
 

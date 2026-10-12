@@ -34,17 +34,25 @@ RUN npm install -g \
         opencode-ai \
     && npm cache clean --force
 
-# Non-root user (Claude Code refuses --dangerously-skip-permissions as root)
-RUN useradd -m -s /bin/bash dev \
+# Non-root user (Claude Code refuses --dangerously-skip-permissions as root).
+# dev takes UID/GID 1000 from the base image's unused node user, so it matches the usual first
+# user on a Linux host and can write to the mounted project. entrypoint.sh handles other UIDs.
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod 755 /usr/local/bin/entrypoint.sh \
+    && userdel -r node \
+    && groupadd -g 1000 dev && useradd -m -s /bin/bash -u 1000 -g 1000 dev \
     && echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev \
     && mkdir -p /workspace /home/dev/.claude /home/dev/.codex /home/dev/.local/share/opencode \
-                /home/dev/.local/share/code-server \
+                /home/dev/.config/opencode /home/dev/.local/share/code-server \
     && chown -R dev:dev /workspace /home/dev
 USER dev
 WORKDIR /workspace
+# Keep ~/.claude.json (sign-in, trust decisions, MCP servers) inside the persisted ~/.claude
+ENV CLAUDE_CONFIG_DIR=/home/dev/.claude
 
 # Python extension for code-server (Open VSX registry)
 RUN code-server --install-extension ms-python.python || true
 
 EXPOSE 8080
+ENTRYPOINT ["entrypoint.sh"]
 CMD ["bash"]
