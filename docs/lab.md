@@ -40,4 +40,4 @@ claude                     # or codex, opencode
 | 6 | Stretch: profile on a large molecule and speed it up, or add a small GUI, keeping the tests green. | before/after numbers, or an app |
 
 Compare your result with `main` of claude-pgmol and with PGMol: same specification, different agents, different
-code.
+code. To split the work across sessions, see [Working with multiple agents](muiltiagents.md).

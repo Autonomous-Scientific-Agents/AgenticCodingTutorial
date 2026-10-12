@@ -49,7 +49,11 @@ Compare scores only when the harness and the data split are the same.
 ## DOE and ALCF resources
 
 - [AmSC Model Access Gateway (MAG)](https://docs.amsc.energy.gov/model-access-gateway/) — model access for Genesis Mission teams: account, project, personal access token, and setup for Claude Code and Codex CLI.
-- [ALCF Inference Endpoints](https://docs.alcf.anl.gov/services/inference-endpoints) — open-weight models on ALCF hardware, including setup for coding agents; examples in [argonne-lcf/inference-endpoints](https://github.com/argonne-lcf/inference-endpoints).
+- [argo-proxy](https://github.com/oaklight/argo-proxy) — multi-format gateway to ARGO for ANL-internal users; translates OpenAI, Anthropic, and Google GenAI formats.
+- [argo-shim](https://github.com/n-getty/argo-shim) — lightweight HTTP proxy + SSH tunnel for Claude Code and Codex CLI on ALCF machines.
+- [ALCF Inference Endpoints](https://docs.alcf.anl.gov/services/inference-endpoints) — open-weight models on ALCF hardware (Sophia, Metis, Minerva); Globus auth; web UI and API access.
+- [i2-core API](https://api.i2-core.american-science-cloud.org/) — AmSC Intelligent Interfaces; curated commercial models via OpenAI-compatible API (experimental; key manager link).
+- [Custom endpoints guide](endpoints.md) — setup walkthrough for argo-proxy, argo-shim, ALCF Inference, and i2-core with multiple tools.
 
 ## Tutorial container
 

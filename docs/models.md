@@ -1,5 +1,7 @@
 # Models and budget
 
+For Argonne-hosted backends (argo-proxy, argo-shim, ALCF Inference Endpoints), see [Custom endpoints](endpoints.md).
+
 ## Where to look, and how to read a score
 
 | Benchmark | What it measures | Who runs it | Link |

@@ -22,8 +22,10 @@ Build with tests, make it fast, give it a face: one scientific problem, three co
 - [Run in a container](container.md): every tool and editor in one image; the agent only sees your project.
 - [Best practices](best-practices.md): the habits and the evidence behind them.
 - [Tools cheat sheet](tools.md): the same move in each tool.
+- [Working with multiple agents](muiltiagents.md): divide work, run sessions in parallel, integrate.
 - [Skills and MCP](skills-mcp.md): extend the agent with procedures and tools; where to find good ones.
 - [Models and budget](models.md): how to choose, and how to see what you spend.
+- [Custom endpoints](endpoints.md): argo-proxy, argo-shim, ALCF Inference Endpoints for Argonne-hosted backends.
 - [Hands-on lab](lab.md): the point-group classifier, with the demo repositories.
 - [Helpers](helpers.md): who to ask, and about what.
 

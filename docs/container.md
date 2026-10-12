@@ -87,7 +87,7 @@ container.
 
 The script passes these variables from your shell into the container when they are set:
 `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`,
-`OPENROUTER_API_KEY`.
+`OPENROUTER_API_KEY`, `ALCF_AI_TOKEN`, `I2CORE_API_KEY`.
 
 - **Subscription login:** run `claude` or `codex` and follow the login prompt. Logins and settings are stored in
   named volumes, so you sign in once. That covers `~/.claude` (including `.claude.json`: sign-in, trusted
@@ -95,6 +95,11 @@ The script passes these variables from your shell into the container when they a
 - **Genesis Mission teams:** the [AmSC Model Access Gateway (MAG)](https://docs.amsc.energy.gov/model-access-gateway/)
   explains how to get access and a personal access token, and how to point Claude Code and Codex at it.
   Set the variables it describes on your host before starting the container.
+- **ALCF Inference Endpoints:** export `ALCF_AI_TOKEN="$(alcf-tokens get-token inference)"` on the host before
+  starting the container. Config lives in the `ai-agents-opencode-config` volume and persists across runs.
+  See [Custom endpoints: ALCF Inference Endpoints](endpoints.md#alcf-inference-endpoints) for setup.
+- **i2-core:** export `I2CORE_API_KEY="sk-xxxxxxxxxx"` on the host (from the [i2-core API key manager](https://api.i2-core.american-science-cloud.org/)).
+  See [Custom endpoints: i2-core](endpoints.md#i2-core) for setup.
 
 ## Tips
 
