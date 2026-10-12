@@ -26,7 +26,7 @@ These steps assume a fresh computer with nothing installed. Follow the tab for y
 ends with a check; if the check works, move on.
 
 !!! tip "Easiest and safest: the tutorial container"
-    One image has Claude Code, Codex CLI, OpenCode, uv, vim, emacs and VS Code in the browser. The agent only sees
+    One image has Claude Code, Codex CLI, OpenCode, uv, gh, vim, emacs and VS Code in the browser. The agent only sees
     the project folder you mount, so it cannot touch the rest of your machine. You only need Git (step 2) and Docker.
     See [Run in a container](container.md).
 
