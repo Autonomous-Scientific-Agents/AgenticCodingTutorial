@@ -1,12 +1,5 @@
 # Getting started
 
-> *Başlamak bitirmenin yarısıdır*: starting is half of finishing (Turkish).
-> Plato quotes it as a proverb, *ἀρχὴ ἥμισυ παντός*; Aristotle says the beginning is *more* than half.
-> Horace: *Dimidium facti qui coepit habet*. English: *well begun is half done*. Korean: *시작이 반이다*.
-
-The choice of tool matters less than starting. All of them run the same loop and read the same kinds of files,
-and those files live in your repository, so switching later costs nothing.
-
 ## Your first hour
 
 1. **Pick one tool and install it.** Any of the five. If your site provides model access, start with a tool
@@ -245,14 +238,14 @@ Then try the [hands-on lab](lab.md): it starts from a specification and a set of
 
 ### Windows troubleshooting
 
-| Problem | Fix |
-|---|---|
-| `'claude' is not recognized` (or `codex`, `uv`, `git`) | Close the terminal and open a new one. If it persists, rerun the installer and read its last lines: it prints the folder to add to your `PATH`. |
-| `running scripts is disabled on this system` | Allow scripts for your user once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then open a new terminal. |
-| `winget` is not recognized | Install or update **App Installer** from the Microsoft Store, or use the download links above. |
-| Commands from a guide use `export VAR=...` | That is bash syntax. In PowerShell write `$env:VAR = "..."` (current window only). |
-| You want a Linux environment instead | Run `wsl --install` in an administrator PowerShell, restart, open **Ubuntu** from the Start menu and follow the **Linux** tabs on this page. |
-| You want the container | Install [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) (it uses WSL 2), then follow [Run in a container](container.md). |
+| Problem                                                | Fix                                                                                                                                                       |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'claude' is not recognized` (or `codex`, `uv`, `git`) | Close the terminal and open a new one. If it persists, rerun the installer and read its last lines: it prints the folder to add to your `PATH`.           |
+| `running scripts is disabled on this system`           | Allow scripts for your user once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then open a new terminal.                                        |
+| `winget` is not recognized                             | Install or update **App Installer** from the Microsoft Store, or use the download links above.                                                            |
+| Commands from a guide use `export VAR=...`             | That is bash syntax. In PowerShell write `$env:VAR = "..."` (current window only).                                                                        |
+| You want a Linux environment instead                   | Run `wsl --install` in an administrator PowerShell, restart, open **Ubuntu** from the Start menu and follow the **Linux** tabs on this page.              |
+| You want the container                                 | Install [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) (it uses WSL 2), then follow [Run in a container](container.md). |
 
 ## Model access
 
