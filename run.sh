@@ -49,7 +49,7 @@ args=(
 # the files stay yours on the host. Docker Desktop (macOS, Windows) already takes care of this.
 if [[ "$("$ENGINE" --version 2>/dev/null)" == podman* ]] \
     && [[ "$("$ENGINE" info -f '{{.Host.Security.Rootless}}' 2>/dev/null)" == true ]]; then
-  args+=(--userns=keep-id:uid=1000,gid=1000)
+  args+=(--userns=keep-id)
 elif [[ "$(uname -s)" == Linux && "$(id -u)" != 0 && "$(id -u):$(id -g)" != 1000:1000 ]]; then
   # entrypoint.sh renumbers dev to this UID/GID, then drops from root to dev.
   # An image from before entrypoint.sh existed would just stay root, so refuse to use it.
