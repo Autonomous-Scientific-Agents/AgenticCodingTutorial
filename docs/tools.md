@@ -24,7 +24,7 @@ Five tools, one pattern. Paths and features change monthly; check `/help` in the
 | Attach a file | `@path` | `@path or /mention path` | `@path` |
 | Reusable procedure | `.claude/skills/x/SKILL.md → /x` | `.agents/skills/x/SKILL.md → $x` | `.opencode/commands/x.md → /x` |
 | Pick up yesterday's session | `claude -c, /resume` | `codex resume, /resume, /fork` | `opencode -c, /sessions` |
-| Named / parallel sessions | extra terminals or worktrees | `codex resume`, `/fork` | `opencode --session name` |
+| Parallel sessions, one per worktree | `claude -w <name> -n <name>` | `git worktree add`, then `codex` in each | `git worktree add`, then `opencode` in each; resume with `opencode -s <ses_id>` |
 | Headless / CI | `claude -p "…"` | `codex exec "…"` | `opencode run "…"` |
 | No prompts at all (sandbox only) | `--dangerously-skip-permissions` | `--yolo  (or -a never -s workspace-write)` | `--auto  (deny rules still apply)` |
 

@@ -21,7 +21,7 @@ lost. Put rules that must hold into the instructions file.
 2. **Plan first, then build.** Anything touching several files: read-only plan mode, approve the plan, then switch to execute.
 3. **One task per session.** /clear or /new between tasks. /compact with an instruction: “keep the failing test names”.
 4. **Point, don't paste.** @src/pointgroup/core.py attaches the file; !uv run pytest -x puts the exact error in context. Pasted code goes stale.
-5. **Cross-review with a second tool.** Implement in one agent, review in another. The shared AGENTS.md means both know the rules. For several independent tasks, see [Working with multiple agents](muiltiagents.md).
+5. **Cross-review with a second tool.** Implement in one agent, review in another. The shared AGENTS.md means both know the rules. For several independent tasks, see [Working with multiple agents](multi-agents.md).
 6. **Restart, don't argue.** If the agent spirals, stop. Restate the goal with better context, or start a fresh session — do not pile on corrections.
 
 ## Tests are the contract

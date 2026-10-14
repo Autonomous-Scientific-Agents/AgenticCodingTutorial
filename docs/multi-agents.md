@@ -4,8 +4,8 @@ Divide a large task across several agents, run them in parallel when safe, and i
 The coordination is simple: clear responsibilities, isolated work, and a final review.
 
 !!! abstract "The core idea"
-    **One agent per responsibility.** Keep agents focused. Let them run in parallel when they touch
-    different files. Review and integrate in a final session.
+    **One agent per responsibility, one checkout per agent.** Keep agents focused. Give each one its own Git
+    worktree so they cannot overwrite each other. Review and integrate in a final session.
 
 ## When to use multiple agents
 
@@ -16,8 +16,12 @@ The coordination is simple: clear responsibilities, isolated work, and a final r
 | Many independent tasks | Agent A writes the CLI. Agent B builds the web app. Agent C writes tests. Run all in parallel. |
 | Large refactor | Agent A refactors one module. Agent B refactors another. Merge and test together. |
 
-Do *not* run agents in parallel if they edit the same files or test suite — the last write wins and earlier
-work is lost.
+Do *not* let parallel agents share one checkout. They overwrite each other's edits, run each other's
+half-finished tests, and commit each other's changes. Give each agent its own worktree (step 2).
+
+The examples use OpenCode 1.x, the version in the [tutorial container](container.md). In OpenCode 2.x,
+`opencode export` becomes `opencode session export`. Claude Code can do steps 2 and 3 in one command:
+`claude -w core -n agent-core` creates a worktree and names the session.
 
 ## The parallel workflow
 
@@ -45,76 +49,78 @@ Read an XYZ file and return the Schoenflies point group symbol.
 - Agent C: Profile and optimize hot paths.
 ```
 
-### 2. Start independent sessions
+Commit `AGENTS.md` before you create the worktrees, so every branch starts with it.
 
-Each session works in isolation. Give each session an ID so you can list and resume them later.
+### 2. Give each agent its own worktree
+
+A worktree is a second checkout of the same repository, on its own branch. Create one per agent:
+
+```bash
+git worktree add -b feature/core ../work-core
+git worktree add -b feature/cli ../work-cli
+git worktree add -b feature/optimize ../work-optimize
+```
+
+### 3. Start one session per worktree
 
 ```bash
 # Terminal 1: Core logic
-opencode --session agent-core
-# > Implement symmetry detection. Run tests from core_xyz/.
+cd ../work-core && opencode
+# > Implement symmetry detection. Run tests from core_xyz/. Commit after every green step.
 
 # Terminal 2: CLI and I/O
-opencode --session agent-cli
+cd ../work-cli && opencode
 # > Build a CLI that reads XYZ, calls the core module, returns the point group.
 
 # Terminal 3: Optimization
-opencode --session agent-optimize
+cd ../work-optimize && opencode
 # > Profile the core module. Speed up the slowest part. Keep tests green.
 ```
 
-All three sessions read the same `AGENTS.md`, so they follow the same rules and commit to the same repository
-(or worktrees; see below). Pause one session, resume another, and come back later.
+All three sessions read the same `AGENTS.md`, so they follow the same rules, and each commits to its own
+branch.
 
-### 3. Monitor progress
+### 4. Monitor and resume
 
-List your sessions anytime:
+OpenCode gives each session an ID such as `ses_3f2a…`; you cannot choose it. List sessions with their IDs and
+titles:
 
 ```bash
 opencode session list
 ```
 
-Resume a session by name:
+Resume one by ID:
 
 ```bash
-opencode --session agent-core
+cd ../work-core && opencode --session ses_3f2a...
 ```
 
-### 4. Merge and verify
+Note each agent's ID; you need it to export the session later.
 
-When all agents have finished, run a final session to merge branches, run the full test suite, and verify
-acceptance criteria:
+### 5. Merge and verify
+
+When all agents have finished, merge the branches one at a time from the main checkout, so a conflict stops
+you at the branch that caused it:
 
 ```bash
-opencode --session final-integration
-# > Merge branches from agent-core, agent-cli, and agent-optimize.
-#   Run all tests in core_xyz/. If any fail, fix them and commit.
+git merge feature/core
+git merge feature/cli
+git merge feature/optimize
 ```
 
-## Safe parallel work: Git worktrees
-
-If agents make overlapping edits, use Git worktrees to give each agent its own checkout:
+Then start a fresh session there to run the full test suite and check the acceptance criteria:
 
 ```bash
-git worktree add ../work-core feature/core
-git worktree add ../work-cli feature/cli
-git worktree add ../work-optimize feature/optimize
+opencode
+# > Run all tests in core_xyz/. Check every acceptance criterion in AGENTS.md. Fix failures and commit.
 ```
 
-In each directory, start a session:
+Remove the worktrees once the branches are merged (one path per command):
 
 ```bash
-cd ../work-core && opencode --session agent-core
-cd ../work-cli && opencode --session agent-cli
-cd ../work-optimize && opencode --session agent-optimize
-```
-
-Each worktree is on its own branch. When all are done:
-
-```bash
-# Back in the main worktree
-git merge feature/core feature/cli feature/optimize
-git worktree remove ../work-core ../work-cli ../work-optimize
+git worktree remove ../work-core
+git worktree remove ../work-cli
+git worktree remove ../work-optimize
 ```
 
 ## Tracing and reproducibility
@@ -134,14 +140,19 @@ behaves unexpectedly or you need to see exact API requests and responses.
 
 ### Session export (for the record)
 
-At any time, export a session to JSON:
+At any time, export a session to JSON by its ID:
 
 ```bash
-opencode export agent-core > traces/agent-core.json
+mkdir -p traces
+opencode export ses_3f2a... > traces/agent-core.json
 ```
 
 The JSON file contains every prompt, response, tool call, and result. It is a durable, machine-readable
 transcript. Use it to review decisions, audit for compliance, or replay the session later.
+
+Because it contains everything, including any secret or unpublished data that passed through the session,
+keep exports out of Git by default (add `traces/*.json` to `.gitignore`). `opencode export --sanitize`
+writes a redacted copy for sharing.
 
 ### Project trace instructions (for coordination)
 
@@ -159,37 +170,6 @@ any path works.
 }
 ```
 
-## Example: Point group classifier with three agents
-
-```bash
-# Start three terminals.
-
-# Terminal 1: Core logic
-opencode --session agent-core
-# > Implement symmetry detection. Run tests from core_xyz/. Commit after every green step.
-
-# Terminal 2: CLI and I/O
-opencode --session agent-cli
-# > Build a CLI that calls the core module. All core_xyz/ tests still pass.
-
-# Terminal 3: Optimization
-opencode --session agent-optimize
-# > Profile the core module. Find the slowest function and speed it up. Keep tests green.
-
-# When all agents have committed and pushed:
-opencode --session final-integration
-# > Merge feature branches. Run the full test suite. All acceptance criteria met?
-```
-
-Review the traces:
-
-```bash
-opencode export agent-core > traces/agent-core.json
-opencode export agent-cli > traces/agent-cli.json
-opencode export agent-optimize > traces/agent-optimize.json
-git log --oneline -20
-```
-
 ## Safeguards
 
 - **Secrets.** Do not log API keys, credentials, or PII. Redact exported traces before committing or sharing.
@@ -202,25 +182,25 @@ git log --oneline -20
 
 If two agents produce conflicting code or a merge fails:
 
-1. Export both sessions:
+1. Export both sessions (IDs from `opencode session list`):
    ```bash
-   opencode export agent-a > traces/agent-a.json
-   opencode export agent-b > traces/agent-b.json
+   opencode export ses_aaaa... > traces/agent-a.json
+   opencode export ses_bbbb... > traces/agent-b.json
    ```
 
 2. Review the logs. Look at the prompt each agent received and the first failure.
 
 3. Start a fresh session to decide:
    ```bash
-   opencode --session arbiter
+   opencode
    ```
-   Show the arbiter both outputs, the test failures, and ask it to pick or merge the best parts.
+   Show this arbiter both outputs and the test failures, and ask it to pick or merge the best parts.
 
 4. Record the decision. Commit with a clear message about why you chose one approach.
 
 ## Where to go next
 
 - [Best practices](best-practices.md): the six habits that work with any agent.
-- [Tools cheat sheet](tools.md): the same moves in Claude Code, Codex, or Cursor.
+- [Tools cheat sheet](tools.md): the same moves in Claude Code, Codex, and OpenCode.
 - [Agent tracing](agent-tracing.md): a chemistry worked example of session records.
 - [Hands-on lab](lab.md): the point-group classifier with demo repositories.

@@ -43,7 +43,8 @@ $RunArgs = @(
     '-v', 'ai-agents-code-server:/home/dev/.local/share/code-server',
     '-e', 'ANTHROPIC_API_KEY', '-e', 'ANTHROPIC_AUTH_TOKEN', '-e', 'ANTHROPIC_BASE_URL',
     '-e', 'OPENAI_API_KEY', '-e', 'OPENAI_BASE_URL',
-    '-e', 'OPENROUTER_API_KEY'
+    '-e', 'OPENROUTER_API_KEY',
+    '-e', 'ALCF_AI_TOKEN', '-e', 'I2CORE_API_KEY'
 )
 
 # Rootless Podman: map your user to dev (UID/GID 1000 in the image) so it can edit the project.

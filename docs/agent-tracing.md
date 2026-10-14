@@ -36,15 +36,18 @@ Handoff-Notes: Core module stable. CLI can call core.detect(xyz_path).
 ```
 
 You do not need every field on every commit; use the ones relevant to that change.
+`Session-ID` is a short name you choose for the agent's role (`agent-core`), not OpenCode's own
+`ses_…` session ID; record that ID in the session summary so the export can be found later.
 
 ### In session summary
 
-When done, add a summary to `.agent_sessions/<session-id>.md`:
+When done, add a summary to `traces/<session-id>.md` and commit it:
 
 ```markdown
 # Agent Core Session Summary
 
 **Session ID**: agent-core
+**OpenCode session**: ses_3f2a...
 **Role**: Implement core symmetry detection
 **Start**: 2024-01-15 10:00 UTC
 **End**: 2024-01-15 12:30 UTC
@@ -82,13 +85,16 @@ uv run pytest tests/test_core.py -v
 
 ### In session export
 
-Before handing off, export your session:
+Before handing off, export your session by its OpenCode ID (from `opencode session list`; in
+OpenCode 2.x the command is `opencode session export`):
 
 ```bash
-opencode export agent-core > .agent_sessions/agent-core.json
+opencode export ses_3f2a... > traces/agent-core.json
 ```
 
-The JSON contains every prompt, response, and tool call — the ground truth.
+The JSON contains every prompt, response, and tool call — the ground truth. For the same reason it can
+contain anything listed under "Do not record" below, so keep exports out of Git by default
+(`traces/*.json` in `.gitignore`) and share a redacted copy (`opencode export --sanitize`).
 
 ## What to include in traces
 
@@ -111,7 +117,8 @@ The JSON contains every prompt, response, and tool call — the ground truth.
 - Full prompts containing sensitive scientific data.
 - Model responses with PII or security-sensitive details.
 
-Redact secrets from traces before committing or sharing.
+Redact secrets from traces before committing or sharing. Commit the summaries and commit messages;
+keep the raw session exports local unless you have reviewed them.
 
 ## Example: Full trace for a feature
 
@@ -161,11 +168,12 @@ Date:   Mon Jan 15 10:02 UTC 2024
 
 When the next agent starts:
 
-1. Read the previous agent's session summary (`.agent_sessions/agent-core.md`).
+1. Read the previous agent's session summary (`traces/agent-core.md`).
 2. Check the git log to see commits and trace annotations.
-3. Export and review the session JSON if needed:
+3. Review the exported session if needed, one line per message:
    ```bash
-   cat .agent_sessions/agent-core.json | jq '.messages[]' | head -50
+   jq -r '.messages[] | "\(.info.role): \([.parts[] | select(.type == "text") | .text] | join(" "))"' \
+     traces/agent-core.json | head -50
    ```
 
 If something is unclear, ask the agent to clarify or start a new session with an arbiter to resolve.
@@ -175,7 +183,7 @@ If something is unclear, ask the agent to clarify or start a new session with an
 When all parallel agents are done:
 
 ```bash
-opencode --session final-integration
+opencode    # a fresh session in the main checkout
 ```
 
 This session should:
@@ -212,21 +220,21 @@ Handoff-Notes: Ready for code review and merge to main.
 
 ## Audit and reproducibility
 
-All traces are version-controlled in Git:
+Summaries and commit trailers are version-controlled in Git; session exports stay next to them,
+outside Git, until reviewed:
 
 ```bash
-# List all sessions
-ls .agent_sessions/
+# List all summaries and exports
+ls traces/
 
 # View any agent's summary
-cat .agent_sessions/agent-core.md
+cat traces/agent-core.md
 
-# Export and inspect a session in detail
-opencode export agent-core > /tmp/review.json
-jq '.messages | map({role, content})' /tmp/review.json | head -50
+# List the messages of an exported session
+jq '[.messages[] | {role: .info.role, parts: [.parts[].type]}]' traces/agent-core.json | head -50
 
-# Review commits with trace metadata
-git log --format='%B' agent-core~5..agent-core | grep "Session-ID"
+# Commits made by one agent, with their trace fields
+git log --grep='^Session-ID: agent-core$' --format='%h %s%n%b'
 ```
 
 This creates a paper trail of decisions, helping with code review, debugging, and learning.

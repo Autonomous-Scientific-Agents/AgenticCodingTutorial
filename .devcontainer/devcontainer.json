@@ -20,7 +20,9 @@
     "ANTHROPIC_BASE_URL": "${localEnv:ANTHROPIC_BASE_URL}",
     "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
     "OPENAI_BASE_URL": "${localEnv:OPENAI_BASE_URL}",
-    "OPENROUTER_API_KEY": "${localEnv:OPENROUTER_API_KEY}"
+    "OPENROUTER_API_KEY": "${localEnv:OPENROUTER_API_KEY}",
+    "ALCF_AI_TOKEN": "${localEnv:ALCF_AI_TOKEN}",
+    "I2CORE_API_KEY": "${localEnv:I2CORE_API_KEY}"
   },
   "customizations": {
     "vscode": {

@@ -42,6 +42,7 @@ args=(
   -e ANTHROPIC_API_KEY -e ANTHROPIC_AUTH_TOKEN -e ANTHROPIC_BASE_URL
   -e OPENAI_API_KEY -e OPENAI_BASE_URL
   -e OPENROUTER_API_KEY
+  -e ALCF_AI_TOKEN -e I2CORE_API_KEY
 )
 
 # Make dev (UID/GID 1000 in the image) own the mounted project, so the agent can edit it and

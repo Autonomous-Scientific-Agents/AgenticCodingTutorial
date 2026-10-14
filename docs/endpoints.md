@@ -2,11 +2,11 @@
 
 Point your coding agent at Argonne-hosted backends: argo-proxy (ANL), argo-shim (ALCF compute), ALCF Inference Endpoints (open-weight models), or i2-core (AmSC commercial models).
 
-| Backend | Network | Auth | Five tools | Official docs |
+| Backend | Network | Auth | Tools covered here | Official docs |
 |---|---|---|---|---|
-| **argo-proxy** | ANL internal / VPN | ANL username | All five | [argo-proxy ReadTheDocs](https://argo-proxy.readthedocs.io) |
+| **argo-proxy** | ANL internal / VPN | ANL username | Claude Code, Codex CLI, OpenCode, Kilo Code | [argo-proxy ReadTheDocs](https://argo-proxy.readthedocs.io) |
 | **argo-shim** | ALCF machine (UAN/login) | CELS SSH key | Claude Code, Codex CLI | [argo-shim README](https://github.com/n-getty/argo-shim) |
-| **ALCF Inference** | Public (Globus auth) | Globus token | All five | [ALCF Inference Endpoints](https://docs.alcf.anl.gov/services/inference-endpoints) |
+| **ALCF Inference** | Public (Globus auth) | Globus token | All five (Cursor and Kilo Code untested) | [ALCF Inference Endpoints](https://docs.alcf.anl.gov/services/inference-endpoints) |
 | **i2-core** | Public | API key | OpenCode | [API key manager](https://api.i2-core.american-science-cloud.org/) |
 
 !!! note "MAG (Model Access Gateway)"
@@ -29,18 +29,25 @@ argo-proxy config init     # interactive setup
 argo-proxy serve
 ```
 
-Default port: `44497`. Check `~/.config/argoproxy/config.yaml` or startup output for your host and port.
+`argo-proxy config init` picks a free port and writes `~/.config/argoproxy/config.yaml`. The examples below
+use `44497`; replace it with the port in your config or in the startup output.
 
 ### Claude Code
 
-```bash
-claude config set -g apiKeyHelper "echo 'your-anl-username'"
-claude config set -g env.ANTHROPIC_BASE_URL "http://localhost:44497"
-claude config set -g env.CLAUDE_CODE_SKIP_ANTHROPIC_AUTH "1"
-claude
+Add to `~/.claude/settings.json` (current Claude Code no longer has `claude config set -g`):
+
+```json
+{
+  "apiKeyHelper": "echo your-anl-username",
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://localhost:44497",
+    "CLAUDE_CODE_SKIP_ANTHROPIC_AUTH": "1"
+  }
+}
 ```
 
-The `CLAUDE_CODE_SKIP_ANTHROPIC_AUTH=1` flag is required — it skips Anthropic's default auth flow.
+The base URL is the proxy root, without `/v1`: Claude Code appends `/v1/messages` itself. The argo-proxy docs
+say `CLAUDE_CODE_SKIP_ANTHROPIC_AUTH=1` is required; it skips Anthropic's default sign-in flow.
 
 ### Codex CLI
 
@@ -98,12 +105,8 @@ Do not hard-code the catalog — model names and availability change. Use the co
 
 ### Cursor
 
-In Cursor settings (or `.cursor/settings.json`):
-
-- **Base URL**: `http://localhost:44497/v1`
-- **API Key**: `your-anl-username`
-
-Use the same chat completions endpoint as OpenCode.
+Cursor sends requests for custom models from its own servers, not from your machine, so it cannot reach an
+argo-proxy on `localhost` or on the ANL network. Use one of the other tools with argo-proxy.
 
 ### Kilo Code
 
@@ -178,8 +181,9 @@ codex --profile argo
 
 The `--codex` flag writes a managed provider to `~/.codex/config.toml` and a profile to `~/.codex/argo.config.toml`. Re-run `argo-shim --codex` after port changes or to refresh the token.
 
-!!! note "Codex version"
-    Codex ≥ 0.95 dropped Chat Completions support. Use ≤ 0.94 or stick to the Responses API. argo-shim supports both with automatic routing.
+!!! note "Codex and the Responses API"
+    Current Codex speaks only the Responses API. Argo serves it natively, and argo-shim routes Codex to it, so
+    any recent Codex works.
 
 ### Running from compute nodes
 
@@ -238,11 +242,14 @@ alcf-ai agent configure opencode    # or: codex, claude
 Then run your agent:
 
 ```bash
-opencode
-# OR
-alcf-tokens get-token inference | tee ~/.alcf_token
-export ALCF_AI_TOKEN="$(cat ~/.alcf_token)"
-codex --profile alcf  # if you ran alcf-ai with --codex
+opencode    # or: codex, claude
+```
+
+`alcf-ai agent configure` refreshes tokens itself when `alcf-tokens` is on your `PATH`. For a manual
+configuration (below), put a fresh token in the environment first:
+
+```bash
+export ALCF_AI_TOKEN="$(alcf-tokens get-token inference)"
 ```
 
 !!! tip "Refreshing tokens"
@@ -256,7 +263,7 @@ Three active clusters. Pick based on your agent and model needs:
 |---|---|---|---|
 | **Sophia** | `https://inference-api.alcf.anl.gov/resource_server/sophia/vllm/v1` | Chat Completions, Responses, Anthropic Messages, Embeddings | Most open models; chat and coding agents |
 | **Metis** | `https://inference-api.alcf.anl.gov/resource_server/metis/api/v1` | Chat Completions, Responses | SambaNova hardware; tool-calling has known issues |
-| **Minerva** | `https://inference-api.alcf.anl.gov/resource_server/minerva/api/v1` | Chat Completions, Responses, Anthropic Messages | Optimized for Claude via Anthropic Messages API |
+| **Minerva** | `https://inference-api.alcf.anl.gov/resource_server/minerva/api/v1` | Chat Completions, Responses, Anthropic Messages | Direct API endpoint; ALCF's choice for Claude Code and Codex (`inkling-bf16`, `nemotron-3-ultra`) |
 
 See [Available Models](https://docs.alcf.anl.gov/services/inference-endpoints/models/) for the current model list per cluster. Do not hard-code model names — fetch from `/models` or use `alcf-ai ls-models <cluster>`.
 
@@ -295,7 +302,7 @@ opencode
 Add to `~/.codex/config.toml`:
 
 ```toml
-model = "openai/gpt-oss-120b"
+model = "inkling-bf16"
 model_provider = "alcf-minerva"
 
 [model_providers.alcf-minerva]
@@ -305,15 +312,19 @@ env_key = "ALCF_AI_TOKEN"
 wire_api = "responses"
 ```
 
-Export token and run:
+Codex also needs a model catalog entry for a model it does not know. ALCF's
+[Codex instructions](https://docs.alcf.anl.gov/services/inference-endpoints/agents/#codex) include a script that
+writes one (`model_catalog_json`) and the profile that uses it; `alcf-ai agent configure codex` does all of
+this for you. Then:
 
 ```bash
 export ALCF_AI_TOKEN="$(alcf-tokens get-token inference)"
 codex
 ```
 
-!!! warning "Codex ≥ 0.95"
-    Chat Completions API support was removed in Codex 0.95. Use Codex ≤ 0.94 on Sophia, or use Minerva (Responses API). See [Codex Version Requirement](https://docs.alcf.anl.gov/services/inference-endpoints/agents/#codex).
+!!! warning "Codex needs the Responses API"
+    Codex 0.95 and later speak only the Responses API, and Sophia does not stream it, so point Codex at
+    Minerva. ALCF's docs give Codex 0.94 or older (Chat Completions) as the alternative for Sophia.
 
 ### Manual config: Claude Code
 
@@ -337,17 +348,19 @@ Or use `alcf-tokens` to keep tokens fresh:
 alcf-ai agent configure claude
 ```
 
-!!! note "Anthropic Messages API required"
-    Claude Code needs the Anthropic Messages API (`/v1/messages`). Minerva supports it; Sophia does not. Use Minerva for Claude Code.
+!!! note "Use Minerva for Claude Code"
+    Claude Code needs the Anthropic Messages API (`/v1/messages`). Sophia lists that route too, but ALCF's
+    docs say Claude Code works without a shim only on a Direct API endpoint such as Minerva.
 
 ### Manual config: Cursor
 
 In Cursor settings:
 
 - **Base URL**: `https://inference-api.alcf.anl.gov/resource_server/sophia/vllm/v1` (Chat Completions)
-- **API Key**: `$(alcf-tokens get-token inference)` or paste a token manually
+- **API Key**: paste the output of `alcf-tokens get-token inference` (the field does not run commands)
 
-Cursor supports OpenAI-compatible endpoints natively.
+The token expires after 48 hours and Cursor does not refresh it, so paste a new one when requests start
+failing. Not tested.
 
 ### Manual config: Kilo Code
 
@@ -356,13 +369,13 @@ In Kilo Code VS Code settings:
 - **Base URL**: `https://inference-api.alcf.anl.gov/resource_server/minerva/api/v1`
 - **API Key**: Token from `alcf-tokens get-token inference`
 
-Kilo Code uses the Anthropic Messages API, so point at Minerva (which supports it).
+The token expires after 48 hours; paste a new one when requests start failing. Not tested.
 
 ### Limitations and workarounds
 
 - **Tool calling broken on Metis**: SambaNova's tool-call sanitization has a known issue. Use Sophia or Minerva for tool calling.
 - **Streaming off for Responses on Sophia**: Codex on Sophia cannot stream with the Responses API. Use Chat Completions or switch to Minerva.
-- **Connection timeout**: Model is queued. Check status: `curl -H "Authorization: Bearer ${token}" https://inference-api.alcf.anl.gov/resource_server/docs` (Swagger UI) or use `alcf-ai job status`.
+- **Connection timeout**: the model may still be loading. Check what is running with `alcf-ai ls-jobs <cluster>`.
 - **Permission denied after 30 days**: Re-authenticate: `alcf-tokens login inference` or `alcf-tokens clear-tokens` then `alcf-tokens login`.
 
 See [ALCF Inference Troubleshooting](https://docs.alcf.anl.gov/services/inference-endpoints/#troubleshooting) for more.
@@ -450,35 +463,24 @@ List all available models and add them to the `models` object above — fetch fr
 
 ## In the container
 
-The tutorial `run.sh` / `run.ps1` forward authentication env vars from your host:
+The tutorial `run.sh` and `run.ps1` (and the dev container) pass these from your host when they are set:
+`ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`,
+`OPENROUTER_API_KEY`, `ALCF_AI_TOKEN` and `I2CORE_API_KEY`. Set the keys on the host, then start the
+container:
 
 ```bash
-ANTHROPIC_BASE_URL=... OPENAI_BASE_URL=... /path/to/run.sh
-```
-
-For ALCF Inference, argo-proxy, or i2-core with OpenCode, set on your host:
-
-```bash
-export ALCF_AI_TOKEN="$(alcf-tokens get-token inference)"      # ALCF Inference
-export I2CORE_API_KEY="sk-xxxxxxxxxx"                           # i2-core
-export OPENCODE_CONFIG_DIR="$HOME/.config/opencode"             # optional: sync config
+export ALCF_AI_TOKEN="$(alcf-tokens get-token inference)"   # ALCF Inference (expires after 48 hours)
+export I2CORE_API_KEY="sk-xxxxxxxxxx"                         # i2-core
 /path/to/run.sh
 ```
 
-Inside the container, copy your OpenCode config:
+**OpenCode provider config.** Your host's `~/.config/opencode` is not visible in the container. Either put
+the `provider` block in an `opencode.json` at the root of your project (it is mounted, and the
+`{env:...}` keys keep secrets out of the file), or create `~/.config/opencode/opencode.json` once inside the
+container; that folder is a named volume, so it is kept across runs.
 
-```bash
-# Host: mount or copy ~/.config/opencode into the container
-# In container:
-opencode
-```
-
-Or configure inside the container once and persist:
-
-```bash
-docker volume inspect ai-agents-opencode-config   # see where it lives
-# Config is preserved across container runs
-```
+**argo-proxy on the host.** Inside the container, `localhost` is the container itself. With Docker Desktop
+(macOS, Windows), use `http://host.docker.internal:44497` wherever this page says `http://localhost:44497`.
 
 ---
 
