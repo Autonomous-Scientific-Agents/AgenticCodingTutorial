@@ -18,7 +18,7 @@ fi
 
 # Settings volumes created by an earlier image (where dev had another UID) would be read-only.
 if [ "$(id -un 2>/dev/null)" = dev ]; then
-  for d in .claude .codex .config/opencode .config/gh .local/share/opencode .local/share/code-server; do
+  for d in .claude .codex .config/opencode .config/gh .globus .local/share/opencode .local/share/code-server; do
     [ -O "/home/dev/$d" ] || sudo chown -R dev:dev "/home/dev/$d" 2>/dev/null || true
   done
 fi

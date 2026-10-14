@@ -1,0 +1,35 @@
+#!/bin/bash
+# OpenCode through the AmSC Model Access Gateway (MAG), with the provider MAG documents:
+# https://docs.amsc.energy.gov/client-applications/coding-tools/opencode
+# Needs AMSC_TOKEN (your MAG PAT); without it, in a terminal, this asks for one for this session.
+# The provider is passed in OPENCODE_CONFIG_CONTENT, so your opencode.json files are not changed.
+#
+#   opencode-amsc                          start OpenCode (AMSC_OPENCODE_MODEL or claude-sonnet)
+#   opencode-amsc -m amsc-mag/gpt-6-luna   any opencode option works; /models lists the MAG models
+set -euo pipefail
+source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
+
+require_amsc_token
+
+export OPENCODE_CONFIG_CONTENT='{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "amsc-mag/'"${AMSC_OPENCODE_MODEL:-claude-sonnet}"'",
+  "compaction": { "auto": true, "prune": true, "reserved": 20000 },
+  "provider": {
+    "amsc-mag": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "AmSC MAG",
+      "options": { "baseURL": "'"$MAG_URL"'/v1", "apiKey": "{env:AMSC_TOKEN}" },
+      "models": {
+        "claude-haiku":  { "name": "Claude Haiku",  "limit": { "context": 100000, "output": 32000 } },
+        "claude-sonnet": { "name": "Claude Sonnet", "limit": { "context": 200000, "output": 64000 } },
+        "gpt-6-luna":    { "name": "GPT-6 Luna",    "limit": { "context": 272000, "output": 32000 },
+                           "options": { "reasoningEffort": "high" } },
+        "gemini-flash":  { "name": "Gemini Flash",  "limit": { "context": 1048576, "output": 65536 },
+                           "options": { "reasoningEffort": "medium" } }
+      }
+    }
+  }
+}'
+
+exec opencode "$@"

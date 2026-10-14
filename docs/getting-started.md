@@ -255,3 +255,62 @@ request access, create a personal access token, and connect Claude Code and Code
 
 The [ALCF Inference Endpoints documentation](https://docs.alcf.anl.gov/services/inference-endpoints)
 describes how to point coding agents at open-weight models hosted on ALCF hardware.
+
+### Shortcut commands for MAG and ALCF
+
+This repository has six small commands that start an agent on MAG or on the ALCF Inference Endpoints with the
+right settings. They are built into the [tutorial container](container.md#4-model-access-and-logins), and they
+also work on your own machine. They do not change your agents' configuration files, so plain `claude`, `codex`
+and `opencode` keep working as before.
+
+| | MAG | ALCF Inference Endpoints |
+|---|---|---|
+| Claude Code | `claude-amsc` | `claude-alcf` |
+| Codex | `codex-amsc` | `codex-alcf` |
+| OpenCode | `opencode-amsc` | `opencode-alcf` |
+
+When a token is missing they explain what to do. The MAG commands ask for your personal access token (PAT)
+and use it for that run. The ALCF commands start the ALCF login, which prints a Globus link: open it, log in,
+and paste the code back.
+
+**What you need:** bash and curl (macOS and Linux have both), the agent you want to run, and for ALCF the
+`alcf-tokens` CLI:
+
+```bash
+uv tool install alcf-tokens
+```
+
+**Install the commands.** Download them into `~/.local/bin`, which the uv installer already put on your `PATH`:
+
+```bash
+mkdir -p ~/.local/bin && cd ~/.local/bin
+for f in agent-tokens.sh claude-amsc claude-alcf codex-amsc codex-alcf opencode-amsc opencode-alcf; do
+  curl -fsSLO "https://raw.githubusercontent.com/Autonomous-Scientific-Agents/AgenticCodingTutorial/main/bin/$f"
+done
+chmod +x claude-amsc claude-alcf codex-amsc codex-alcf opencode-amsc opencode-alcf
+```
+
+Keep `agent-tokens.sh` in the same folder: the commands read it to handle tokens. Run the loop again to update.
+If you cloned this repository, you can instead add its `bin` folder to your `PATH`
+(`export PATH="/path/to/AgenticCodingTutorial/bin:$PATH"` in `~/.zshrc` or `~/.bashrc`) and update with `git pull`.
+
+**Save your MAG PAT** so you are not asked every time. Add this line to `~/.zshrc` (macOS) or `~/.bashrc` (Linux)
+and open a new terminal. PATs are short-lived; when the commands say MAG rejected it, create a new one on
+[myAmSC](https://my.amsc.energy.gov/dashboard) and replace it.
+
+```bash
+export AMSC_TOKEN=<your PAT>
+```
+
+**Use them** in your project folder like the plain agents. Options pass through:
+
+```bash
+cd my-project
+claude-amsc                       # Claude Code on MAG
+codex-alcf -m nemotron-3-ultra    # Codex on ALCF with another model
+opencode-amsc                     # OpenCode on MAG; /models lists the MAG models
+```
+
+The [container page](container.md#4-model-access-and-logins) lists the default models and the variables that
+change them. On your machine Codex keeps its own sandbox; only inside the container do `codex-amsc` and
+`codex-alcf` turn it off. On Windows, run the commands in [WSL](#windows-troubleshooting) or Git Bash.

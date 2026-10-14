@@ -11,10 +11,11 @@
     "source=ai-agents-codex,target=/home/dev/.codex,type=volume",
     "source=ai-agents-opencode,target=/home/dev/.local/share/opencode,type=volume",
     "source=ai-agents-opencode-config,target=/home/dev/.config/opencode,type=volume",
-    "source=ai-agents-gh,target=/home/dev/.config/gh,type=volume"
+    "source=ai-agents-gh,target=/home/dev/.config/gh,type=volume",
+    "source=ai-agents-globus,target=/home/dev/.globus,type=volume"
   ],
   // The settings volumes may have been created under another UID (older image, or run.sh on Linux).
-  "postStartCommand": "sudo chown -R dev:dev /home/dev/.claude /home/dev/.codex /home/dev/.local/share/opencode /home/dev/.config/opencode /home/dev/.config/gh",
+  "postStartCommand": "sudo chown -R dev:dev /home/dev/.claude /home/dev/.codex /home/dev/.local/share/opencode /home/dev/.config/opencode /home/dev/.config/gh /home/dev/.globus",
   "remoteEnv": {
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
     "ANTHROPIC_AUTH_TOKEN": "${localEnv:ANTHROPIC_AUTH_TOKEN}",

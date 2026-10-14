@@ -1,0 +1,30 @@
+#!/bin/bash
+# Codex CLI through the AmSC Model Access Gateway (MAG), with the provider settings MAG documents:
+# https://docs.amsc.energy.gov/client-applications/coding-tools/codex
+# Needs AMSC_TOKEN (your MAG PAT); without it, in a terminal, this asks for one for this session.
+# Nothing is written to ~/.codex/config.toml.
+#
+#   codex-amsc                         start Codex with the default model (AMSC_CODEX_MODEL or gpt-6-luna)
+#   codex-amsc -m gpt-6.1-sol          any codex option works
+set -euo pipefail
+source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
+
+require_amsc_token
+
+# Codex's own sandbox (bubblewrap) cannot run inside the container; there the container is the sandbox.
+# On your own machine Codex keeps its sandbox.
+sandbox=()
+in_container && sandbox=(-c 'sandbox_mode="danger-full-access"')
+
+exec codex \
+  -c model_provider='"amsc"' \
+  -c 'model_providers.amsc.name="AmSC MAG"' \
+  -c "model_providers.amsc.base_url=\"$MAG_URL/v1\"" \
+  -c 'model_providers.amsc.env_key="AMSC_TOKEN"' \
+  -c 'model_providers.amsc.wire_api="responses"' \
+  -c 'model_providers.amsc.supports_websockets=false' \
+  -c 'model_providers.amsc.http_headers={ "X-AmSC-MAG-Provider" = "openai" }' \
+  -c "model=\"${AMSC_CODEX_MODEL:-gpt-6-luna}\"" \
+  -c 'model_auto_compact_token_limit=200000' \
+  ${sandbox[@]+"${sandbox[@]}"} \
+  "$@"

@@ -1,0 +1,23 @@
+#!/bin/bash
+# One line about model access and GitHub, shown when an interactive shell starts in the container.
+# Checks only variables and files, so it adds no delay.
+
+if [[ -n "${AMSC_TOKEN:-}" ]]; then
+  mag="MAG ready (claude-amsc, codex-amsc, opencode-amsc)"
+else
+  mag="MAG: no AMSC_TOKEN (the *-amsc commands ask for a PAT)"
+fi
+
+if [[ -n "${ALCF_AI_TOKEN:-}" ]] || compgen -G "$HOME/.globus/app/*/alcf_tokens/tokens.json" >/dev/null; then
+  alcf="ALCF ready (claude-alcf, codex-alcf, opencode-alcf)"
+else
+  alcf="ALCF: not logged in (the *-alcf commands walk you through it)"
+fi
+
+if [[ -n "${GH_TOKEN:-}" || -s "$HOME/.config/gh/hosts.yml" ]]; then
+  gh="GitHub ready"
+else
+  gh="GitHub: run gh auth login"
+fi
+
+echo "$mag · $alcf · $gh"

@@ -2,19 +2,18 @@
 # Claude Code through the AmSC Model Access Gateway (MAG), with the settings MAG recommends:
 # https://docs.amsc.energy.gov/client-applications/coding-tools/claude-code
 # Needs AMSC_TOKEN (your MAG personal access token); run.sh passes it in from the host.
+# Without it, in a terminal, this explains how to get a PAT and asks for one for this session.
 #
 #   claude-amsc                       start Claude Code
 #   claude-amsc --model claude-haiku  any claude option works
 set -euo pipefail
+source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
 
-if [[ -z "${AMSC_TOKEN:-}" ]]; then
-  echo "claude-amsc: AMSC_TOKEN is not set. Set it to your MAG PAT on the host, then restart the container." >&2
-  exit 1
-fi
+require_amsc_token
 
 unset ANTHROPIC_API_KEY  # would be sent instead of the MAG token
 export ANTHROPIC_AUTH_TOKEN="$AMSC_TOKEN"
-export ANTHROPIC_BASE_URL=https://mag.genesis.americansciencecloud.org
+export ANTHROPIC_BASE_URL="$MAG_URL"
 export DISABLE_NON_ESSENTIAL_MODEL_CALLS=1
 export DISABLE_TELEMETRY=1
 export CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1

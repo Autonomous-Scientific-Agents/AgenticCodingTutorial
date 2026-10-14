@@ -142,6 +142,9 @@ container.
 
 ## 4. Model access and logins
 
+The `*-amsc` and `*-alcf` commands below also work without the container; see
+[Shortcut commands for MAG and ALCF](getting-started.md#shortcut-commands-for-mag-and-alcf).
+
 Keys and tokens stay on your machine: you set them as environment variables on the host, and the run script
 copies them into the container each time it starts. They are never written into the image or the saved volumes.
 The script passes these variables when they are set:
@@ -154,7 +157,10 @@ The script passes these variables when they are set:
   `DISABLE_TELEMETRY` and `DISABLE_NON_ESSENTIAL_MODEL_CALLS`
 - `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENROUTER_API_KEY`
 
-Check what arrived from inside the container, without printing the values: `env | cut -d= -f1 | grep -E 'AMSC|ALCF|ANTHROPIC|OPENAI'`.
+When a shell starts in the container, one line shows what is ready, for example
+`MAG ready (claude-amsc) · ALCF: not logged in (claude-alcf walks you through it) · GitHub ready`.
+Run `agent-status` to show it again. To list what arrived without printing the values:
+`env | cut -d= -f1 | grep -E 'AMSC|ALCF|ANTHROPIC|OPENAI'`.
 
 - **Subscription login:** run `claude` or `codex` and follow the login prompt. Logins and settings are stored in
   named volumes, so you sign in once. That covers `~/.claude` (including `.claude.json`: sign-in, trusted
@@ -187,100 +193,74 @@ a personal access token (PAT).
 PATs are short-lived. When MAG answers `401 Unauthorized`, generate a new PAT on
 [myAmSC](https://my.amsc.energy.gov/dashboard), replace the value, open a new terminal and restart the container.
 
-**2. Start Claude Code with `claude-amsc`.** Inside the container, `claude-amsc` runs Claude Code with the
-settings MAG recommends for [Claude Code](https://docs.amsc.energy.gov/client-applications/coding-tools/claude-code).
-Plain `claude` keeps your normal login.
+No `AMSC_TOKEN` yet, or it expired? Run `claude-amsc` anyway: it explains where to get a PAT, asks you to paste
+it (hidden), checks it with MAG, and uses it until the container stops. Nothing is saved, so set it on the host
+as above to skip this next time.
+
+**2. Start an agent on MAG.** The container has one command per tool. Each uses the settings MAG documents for
+[Claude Code](https://docs.amsc.energy.gov/client-applications/coding-tools/claude-code),
+[Codex](https://docs.amsc.energy.gov/client-applications/coding-tools/codex) and
+[OpenCode](https://docs.amsc.energy.gov/client-applications/coding-tools/opencode), and leaves your
+configuration files alone. Plain `claude`, `codex` and `opencode` keep your normal logins.
+
+| Command | Default model | Change it |
+|---|---|---|
+| `claude-amsc` | Claude Code's default | `claude-amsc --model claude-haiku` |
+| `codex-amsc` | `gpt-6-luna` | `codex-amsc -m gpt-6.1-sol`, or set `AMSC_CODEX_MODEL` |
+| `opencode-amsc` | `claude-sonnet` | `/models` in OpenCode, `-m amsc-mag/gpt-6-luna`, or set `AMSC_OPENCODE_MODEL` |
 
 ```bash
 cd my-project
-/path/to/run.sh claude-amsc          # or: start a shell with /path/to/run.sh, then run claude-amsc
-claude-amsc --model claude-haiku     # any claude option works
+/path/to/run.sh claude-amsc          # or: start a shell with /path/to/run.sh, then run any of them
 ```
 
-To change a default, set the variable on your host before starting the container, for example
-`CLAUDE_CODE_AUTO_COMPACT_WINDOW=100000` for Haiku, or `ANTHROPIC_CUSTOM_HEADERS="X-AmSC-MAG-Provider: amazon"`
-to choose the provider. Check access inside the container:
+Set defaults on your host before starting the container, for example `CLAUDE_CODE_AUTO_COMPACT_WINDOW=100000`
+for Haiku, or `ANTHROPIC_CUSTOM_HEADERS="X-AmSC-MAG-Provider: amazon"` to choose the provider for Claude.
+Check access inside the container:
 
 ```bash
 curl -s -H "Authorization: Bearer $AMSC_TOKEN" https://mag.genesis.americansciencecloud.org/v1/models | head -c 300
 ```
-
-**3. Codex and OpenCode** read `AMSC_TOKEN` directly, so they only need a provider in their configuration.
-Create it once inside the container. It is saved in the `~/.codex` and `~/.config/opencode` volumes, and
-holds the variable name, never the PAT.
-
-- **Codex:** add MAG's provider block to `~/.codex/config.toml`
-  ([MAG Codex page](https://docs.amsc.energy.gov/client-applications/coding-tools/codex)):
-
-    ```toml
-    model = "gpt-6-luna"
-    model_provider = "mag"
-
-    [model_providers.mag]
-    name = "AmSC MAG"
-    base_url = "https://mag.genesis.americansciencecloud.org/v1"
-    env_key = "AMSC_TOKEN"
-    wire_api = "responses"
-    supports_websockets = false
-    http_headers = { "X-AmSC-MAG-Provider" = "openai" }
-    ```
-
-- **OpenCode:** copy the `amsc-mag` provider from the
-  [MAG OpenCode page](https://docs.amsc.energy.gov/client-applications/coding-tools/opencode) into
-  `~/.config/opencode/opencode.json`, then pick a model with `/models`.
 
 ### ALCF Inference Endpoints
 
 [ALCF Inference Endpoints](https://docs.alcf.anl.gov/services/inference-endpoints) serve open-weight models
 on ALCF hardware. Their access tokens last 48 hours.
 
-**1. Log in once on your host** with the `alcf-tokens` CLI (it needs uv, step 3 of
-[Getting started](getting-started.md)):
+**1. Log in once.** You need an ALCF account. The simplest way is inside the container: run `claude-alcf`
+and follow the prompt. It prints a Globus link; open it, log in, and paste the code back. You can also log in
+yourself with `alcf-tokens login inference`. The login is saved in the `ai-agents-globus` volume and tokens
+refresh on their own; ALCF asks you to log in again every 30 days.
 
-```bash
-uv tool install alcf-tokens
-alcf-tokens login inference      # opens a Globus login in your browser
-```
+??? note "Or log in on your host"
+    If you also use ALCF outside the container, log in on the host instead (needs uv, step 3 of
+    [Getting started](getting-started.md)):
 
-From then on the run script calls `alcf-tokens get-token inference` each time it starts and passes a fresh
-token as `ALCF_AI_TOKEN`. Tokens refresh on their own; ALCF asks you to log in again every 30 days. Without
-`alcf-tokens` on the host, set `ALCF_AI_TOKEN` yourself. A container that runs longer than 48 hours needs a
-restart to pick up a new token.
-
-**2. Point an agent at an ALCF endpoint.** The
-[ALCF agents page](https://docs.alcf.anl.gov/services/inference-endpoints/agents/) has the current endpoints,
-model names and full configurations.
-
-- **OpenCode:** add a provider to `~/.config/opencode/opencode.json` in the container. This example uses
-  `gpt-oss-120b` on Sophia:
-
-    ```json
-    {
-      "$schema": "https://opencode.ai/config.json",
-      "provider": {
-        "alcf-sophia": {
-          "npm": "@ai-sdk/openai-compatible",
-          "name": "ALCF Sophia",
-          "options": {
-            "baseURL": "https://inference-api.alcf.anl.gov/resource_server/sophia/vllm/v1",
-            "apiKey": "{env:ALCF_AI_TOKEN}"
-          },
-          "models": {
-            "openai/gpt-oss-120b": { "name": "gpt-oss-120b", "limit": { "context": 65536, "output": 0 } }
-          }
-        }
-      }
-    }
+    ```bash
+    uv tool install alcf-tokens
+    alcf-tokens login inference
     ```
 
-    If you also use MAG, put both providers in the same `provider` object.
+    The run script then calls `alcf-tokens get-token inference` each time it starts and passes a fresh token
+    as `ALCF_AI_TOKEN`; this token takes precedence over the one from the in-container login. Tokens last
+    48 hours, so restart a container that runs longer than that.
 
-- **Claude Code:** run `claude-alcf` in the container. It uses Minerva, which speaks the Anthropic Messages API,
-  with the `inkling-bf16` model. Pick another model with `ALCF_CLAUDE_MODEL=<name> claude-alcf`, or another
-  endpoint with `ALCF_ANTHROPIC_BASE_URL`; set either on the host to make it the default.
+**2. Start an agent on ALCF.** The commands use Minerva, which serves `inkling-bf16`, `nemotron-3-ultra` and
+`gpt-oss-120b`. The [ALCF agents page](https://docs.alcf.anl.gov/services/inference-endpoints/agents/) lists
+the current endpoints and models.
 
-- **Codex** needs a model catalog file; follow the Codex section of the ALCF agents page inside the
-  container. `ALCF_AI_TOKEN` is already set there.
+| Command | Default model | Change it |
+|---|---|---|
+| `claude-alcf` | `inkling-bf16` | set `ALCF_CLAUDE_MODEL` |
+| `codex-alcf` | `inkling-bf16` | `codex-alcf -m nemotron-3-ultra`, or set `ALCF_CODEX_MODEL` |
+| `opencode-alcf` | `inkling-bf16` | `/models` in OpenCode, `-m alcf/nemotron-3-ultra`, or set `ALCF_OPENCODE_MODEL` |
+
+Other endpoints: set `ALCF_ANTHROPIC_BASE_URL` (Claude Code) or `ALCF_OPENAI_BASE_URL` (Codex, OpenCode).
+Claude Code and Codex warn that they do not know these models and fall back to default settings; that is
+expected. `gpt-oss-120b` does not work with Codex on Minerva.
+
+Inside the container, Codex's own sandbox (bubblewrap) usually cannot start, so `codex-amsc` and `codex-alcf` turn it off
+(`danger-full-access`); the container is the sandbox. With plain `codex`, use `codex --sandbox danger-full-access`.
 
 ### GitHub and git
 
@@ -325,7 +305,7 @@ host and passes them in, so you do not need to configure git inside the containe
 - Get the newest image with `podman pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest`; the run
   script does not update it on its own. Do this whenever you download a newer run script.
 - Use another port with `PORT=8081 /path/to/run.sh code` (PowerShell: `$env:PORT = "8081"` first).
-- Reset all saved logins and settings: `podman volume rm ai-agents-claude ai-agents-codex ai-agents-opencode ai-agents-opencode-config ai-agents-code-server ai-agents-gh`.
+- Reset all saved logins and settings: `podman volume rm ai-agents-claude ai-agents-codex ai-agents-opencode ai-agents-opencode-config ai-agents-code-server ai-agents-gh ai-agents-globus`.
 - On Linux the script makes `dev` use your own user and group ID, so files the agent writes in the project
   belong to you.
 - Inside the container you are user `dev` with `sudo`, so `sudo apt-get install …` works; it is gone after the

@@ -1,0 +1,31 @@
+#!/bin/bash
+# OpenCode on the ALCF Inference Endpoints (Minerva, OpenAI-compatible API):
+# https://docs.alcf.anl.gov/services/inference-endpoints/agents/
+# Gets ALCF_AI_TOKEN like claude-alcf (from the host, or alcf-tokens, logging in first in a terminal).
+# The provider is passed in OPENCODE_CONFIG_CONTENT, so your opencode.json files are not changed.
+#
+#   opencode-alcf                                start OpenCode (ALCF_OPENCODE_MODEL or inkling-bf16)
+#   opencode-alcf -m alcf/nemotron-3-ultra       any opencode option works; /models lists the ALCF models
+set -euo pipefail
+source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
+
+require_alcf_token
+
+export OPENCODE_CONFIG_CONTENT='{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "alcf/'"${ALCF_OPENCODE_MODEL:-inkling-bf16}"'",
+  "provider": {
+    "alcf": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "ALCF Inference Endpoints",
+      "options": { "baseURL": "'"${ALCF_OPENAI_BASE_URL:-$ALCF_URL/minerva/api/v1}"'", "apiKey": "{env:ALCF_AI_TOKEN}" },
+      "models": {
+        "inkling-bf16":     { "name": "Inkling",          "limit": { "context": 131072, "output": 32768 } },
+        "nemotron-3-ultra": { "name": "Nemotron 3 Ultra", "limit": { "context": 131072, "output": 32768 } },
+        "gpt-oss-120b":     { "name": "gpt-oss-120b",     "limit": { "context": 131072, "output": 32768 } }
+      }
+    }
+  }
+}'
+
+exec opencode "$@"

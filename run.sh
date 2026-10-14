@@ -49,6 +49,7 @@ args=(
   -v ai-agents-opencode-config:/home/dev/.config/opencode
   -v ai-agents-code-server:/home/dev/.local/share/code-server
   -v ai-agents-gh:/home/dev/.config/gh
+  -v ai-agents-globus:/home/dev/.globus
 )
 
 # Commit as you: use your git name and email unless GIT_AUTHOR_*/GIT_COMMITTER_* are already set.

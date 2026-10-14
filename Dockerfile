@@ -39,6 +39,11 @@ RUN git config --system credential.https://github.com.helper '!gh auth git-crede
 # uv: Python versions, virtual environments and packages
 COPY --from=ghcr.io/astral-sh/uv:0.13.0 /uv /uvx /usr/local/bin/
 
+# alcf-tokens: Globus login and tokens for the ALCF Inference Endpoints (used by claude-alcf)
+RUN UV_TOOL_DIR=/opt/uv-tools UV_TOOL_BIN_DIR=/usr/local/bin UV_PYTHON_PREFERENCE=only-system \
+    uv tool install alcf-tokens==0.4.0 \
+    && rm -rf /root/.cache/uv
+
 # VS Code in the browser: `./run.sh code`, then open http://localhost:8080
 RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone \
     --prefix=/usr/local --version="${CODE_SERVER_VERSION}"
@@ -50,8 +55,10 @@ RUN npm install -g \
     opencode-ai \
     && npm cache clean --force
 
-# claude-amsc and claude-alcf: Claude Code with MAG or ALCF Inference Endpoints settings
+# claude-amsc and claude-alcf: Claude Code with MAG or ALCF Inference Endpoints settings.
+# agent-status: one line about model access and GitHub when an interactive shell starts.
 COPY bin/ /usr/local/bin/
+RUN echo '[[ $- == *i* ]] && command -v agent-status >/dev/null && agent-status' >> /etc/bash.bashrc
 
 # Non-root user (Claude Code refuses --dangerously-skip-permissions as root).
 # dev takes UID/GID 1000 from the base image's unused node user, so it matches the usual first
@@ -62,12 +69,13 @@ RUN chmod 755 /usr/local/bin/entrypoint.sh \
     && groupadd -g 1000 dev && useradd -m -s /bin/bash -u 1000 -g 1000 dev \
     && echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev \
     && mkdir -p /workspace /home/dev/.claude /home/dev/.codex /home/dev/.local/share/opencode \
-    /home/dev/.config/opencode /home/dev/.config/gh /home/dev/.local/share/code-server \
+    /home/dev/.config/opencode /home/dev/.config/gh /home/dev/.globus /home/dev/.local/share/code-server \
     && chown -R dev:dev /workspace /home/dev
 USER dev
 WORKDIR /workspace
-# Keep ~/.claude.json (sign-in, trust decisions, MCP servers) inside the persisted ~/.claude
-ENV CLAUDE_CONFIG_DIR=/home/dev/.claude
+# Keep ~/.claude.json (sign-in, trust decisions, MCP servers) inside the persisted ~/.claude.
+# AGENTIC_CODING_CONTAINER tells the bin/ commands they run in this container rather than on a laptop.
+ENV CLAUDE_CONFIG_DIR=/home/dev/.claude AGENTIC_CODING_CONTAINER=1
 
 # Python extension for code-server (Open VSX registry)
 RUN code-server --install-extension ms-python.python || true
