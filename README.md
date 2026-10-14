@@ -79,13 +79,13 @@ Compare scores only when the harness and the data split are the same.
 ## Run the agents in a container
 
 ```bash
-docker pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest
+podman pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest
 cd my-project && /path/to/run.sh      # shell with claude, codex, opencode, uv, gh, vim, emacs
 /path/to/run.sh code                  # VS Code in the browser at http://localhost:8080
 ```
 
 Details: [Run in a container](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/container/).
-The image is rebuilt and pushed to GHCR by `.github/workflows/container.yml` when the `Dockerfile` or `entrypoint.sh` changes. On Windows use `run.ps1` from PowerShell instead of `run.sh`.
+The image is rebuilt and pushed to GHCR by `.github/workflows/container.yml` when the `Dockerfile` or `entrypoint.sh` changes. On Windows use `run.ps1` from PowerShell instead of `run.sh`. Docker works too: use `docker pull`; the run scripts pick whichever engine is installed.
 
 ## Build the site locally
 

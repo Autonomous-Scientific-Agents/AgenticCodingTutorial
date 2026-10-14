@@ -1,0 +1,28 @@
+#!/bin/bash
+# Codex CLI on the ALCF Inference Endpoints (Minerva, Responses API):
+# https://docs.alcf.anl.gov/services/inference-endpoints/agents/
+# Gets ALCF_AI_TOKEN like claude-alcf (from the host, or alcf-tokens, logging in first in a terminal).
+# Codex has no metadata for these models and warns about it; the defaults work.
+#
+#   codex-alcf                         start Codex with the default model (ALCF_CODEX_MODEL or inkling-bf16)
+#   codex-alcf -m nemotron-3-ultra     any codex option works
+set -euo pipefail
+source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
+
+require_alcf_token
+
+# Codex's own sandbox (bubblewrap) cannot run inside the container; there the container is the sandbox.
+# On your own machine Codex keeps its sandbox.
+sandbox=()
+in_container && sandbox=(-c 'sandbox_mode="danger-full-access"')
+
+exec codex \
+  -c model_provider='"alcf"' \
+  -c 'model_providers.alcf.name="ALCF Inference Endpoints"' \
+  -c "model_providers.alcf.base_url=\"${ALCF_OPENAI_BASE_URL:-$ALCF_URL/minerva/api/v1}\"" \
+  -c 'model_providers.alcf.env_key="ALCF_AI_TOKEN"' \
+  -c 'model_providers.alcf.wire_api="responses"' \
+  -c 'model_providers.alcf.supports_websockets=false' \
+  -c "model=\"${ALCF_CODEX_MODEL:-inkling-bf16}\"" \
+  ${sandbox[@]+"${sandbox[@]}"} \
+  "$@"

@@ -1,0 +1,26 @@
+#!/bin/bash
+# Claude Code through the AmSC Model Access Gateway (MAG), with the settings MAG recommends:
+# https://docs.amsc.energy.gov/client-applications/coding-tools/claude-code
+# Needs AMSC_TOKEN (your MAG personal access token); run.sh passes it in from the host.
+# Without it, in a terminal, this explains how to get a PAT and asks for one for this session.
+#
+#   claude-amsc                       start Claude Code
+#   claude-amsc --model claude-haiku  any claude option works
+set -euo pipefail
+source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
+
+require_amsc_token
+
+unset ANTHROPIC_API_KEY  # would be sent instead of the MAG token
+export ANTHROPIC_AUTH_TOKEN="$AMSC_TOKEN"
+export ANTHROPIC_BASE_URL="$MAG_URL"
+export DISABLE_NON_ESSENTIAL_MODEL_CALLS=1
+export DISABLE_TELEMETRY=1
+export CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1
+export CLAUDE_CODE_NO_FLICKER=1
+# Larger outputs get throttled; a lower compaction point keeps long-context prices down (use 100000 for Haiku).
+export CLAUDE_CODE_MAX_OUTPUT_TOKENS="${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-16384}"
+export CLAUDE_CODE_AUTO_COMPACT_WINDOW="${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-200000}"
+# Optional provider choice, e.g. ANTHROPIC_CUSTOM_HEADERS="X-AmSC-MAG-Provider: amazon", is passed through as is.
+
+exec claude "$@"

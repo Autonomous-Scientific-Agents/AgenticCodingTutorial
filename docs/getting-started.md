@@ -1,12 +1,5 @@
 # Getting started
 
-> *Başlamak bitirmenin yarısıdır*: starting is half of finishing (Turkish).
-> Plato quotes it as a proverb, *ἀρχὴ ἥμισυ παντός*; Aristotle says the beginning is *more* than half.
-> Horace: *Dimidium facti qui coepit habet*. English: *well begun is half done*. Korean: *시작이 반이다*.
-
-The choice of tool matters less than starting. All of them run the same loop and read the same kinds of files,
-and those files live in your repository, so switching later costs nothing.
-
 ## Your first hour
 
 1. **Pick one tool and install it.** Any of the five. If your site provides model access, start with a tool
@@ -27,8 +20,8 @@ ends with a check; if the check works, move on.
 
 !!! tip "Easiest and safest: the tutorial container"
     One image has Claude Code, Codex CLI, OpenCode, uv, gh, vim, emacs and VS Code in the browser. The agent only sees
-    the project folder you mount, so it cannot touch the rest of your machine. You only need Git (step 2) and Docker.
-    See [Run in a container](container.md).
+    the project folder you mount, so it cannot touch the rest of your machine. You only need Git (step 2) and
+    Podman (or Docker). See [Run in a container](container.md).
 
 ### What you need
 
@@ -36,7 +29,7 @@ ends with a check; if the check works, move on.
 - **Model access:** a subscription or API key for the tool you pick (Claude for Claude Code, ChatGPT or OpenAI
   for Codex, any provider for OpenCode), or access through [MAG](#model-access) for Genesis Mission teams.
 - **About 30 minutes** and permission to install software. Most steps below do not need administrator rights;
-  Git and Docker Desktop may ask for them.
+  Git and Podman may ask for them.
 
 ### 1. Open a terminal
 
@@ -245,14 +238,14 @@ Then try the [hands-on lab](lab.md): it starts from a specification and a set of
 
 ### Windows troubleshooting
 
-| Problem | Fix |
-|---|---|
+| Problem                                                | Fix                                                                                                                                             |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `'claude' is not recognized` (or `codex`, `uv`, `git`) | Close the terminal and open a new one. If it persists, rerun the installer and read its last lines: it prints the folder to add to your `PATH`. |
-| `running scripts is disabled on this system` | Allow scripts for your user once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then open a new terminal. |
-| `winget` is not recognized | Install or update **App Installer** from the Microsoft Store, or use the download links above. |
-| Commands from a guide use `export VAR=...` | That is bash syntax. In PowerShell write `$env:VAR = "..."` (current window only). |
-| You want a Linux environment instead | Run `wsl --install` in an administrator PowerShell, restart, open **Ubuntu** from the Start menu and follow the **Linux** tabs on this page. |
-| You want the container | Install [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) (it uses WSL 2), then follow [Run in a container](container.md). |
+| `running scripts is disabled on this system`           | Allow scripts for your user once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then open a new terminal.                              |
+| `winget` is not recognized                             | Install or update **App Installer** from the Microsoft Store, or use the download links above.                                                  |
+| Commands from a guide use `export VAR=...`             | That is bash syntax. In PowerShell write `$env:VAR = "..."` (current window only).                                                              |
+| You want a Linux environment instead                   | Run `wsl --install` in an administrator PowerShell, restart, open **Ubuntu** from the Start menu and follow the **Linux** tabs on this page.    |
+| You want the container                                 | Install Podman (`winget install -e --id RedHat.Podman`, it uses WSL 2) or Docker Desktop, then follow [Run in a container](container.md).       |
 
 ## Model access
 
@@ -265,3 +258,62 @@ argo-shim (ALCF machines), or ALCF Inference Endpoints (public, Globus auth).
 
 The [ALCF Inference Endpoints documentation](https://docs.alcf.anl.gov/services/inference-endpoints)
 describes how to point coding agents at open-weight models hosted on ALCF hardware.
+
+### Shortcut commands for MAG and ALCF
+
+This repository has six small commands that start an agent on MAG or on the ALCF Inference Endpoints with the
+right settings. They are built into the [tutorial container](container.md#4-model-access-and-logins), and they
+also work on your own machine. They do not change your agents' configuration files, so plain `claude`, `codex`
+and `opencode` keep working as before.
+
+| | MAG | ALCF Inference Endpoints |
+|---|---|---|
+| Claude Code | `claude-amsc` | `claude-alcf` |
+| Codex | `codex-amsc` | `codex-alcf` |
+| OpenCode | `opencode-amsc` | `opencode-alcf` |
+
+When a token is missing they explain what to do. The MAG commands ask for your personal access token (PAT)
+and use it for that run. The ALCF commands start the ALCF login, which prints a Globus link: open it, log in,
+and paste the code back.
+
+**What you need:** bash and curl (macOS and Linux have both), the agent you want to run, and for ALCF the
+`alcf-tokens` CLI:
+
+```bash
+uv tool install alcf-tokens
+```
+
+**Install the commands.** Download them into `~/.local/bin`, which the uv installer already put on your `PATH`:
+
+```bash
+mkdir -p ~/.local/bin && cd ~/.local/bin
+for f in agent-tokens.sh claude-amsc claude-alcf codex-amsc codex-alcf opencode-amsc opencode-alcf; do
+  curl -fsSLO "https://raw.githubusercontent.com/Autonomous-Scientific-Agents/AgenticCodingTutorial/main/bin/$f"
+done
+chmod +x claude-amsc claude-alcf codex-amsc codex-alcf opencode-amsc opencode-alcf
+```
+
+Keep `agent-tokens.sh` in the same folder: the commands read it to handle tokens. Run the loop again to update.
+If you cloned this repository, you can instead add its `bin` folder to your `PATH`
+(`export PATH="/path/to/AgenticCodingTutorial/bin:$PATH"` in `~/.zshrc` or `~/.bashrc`) and update with `git pull`.
+
+**Save your MAG PAT** so you are not asked every time. Add this line to `~/.zshrc` (macOS) or `~/.bashrc` (Linux)
+and open a new terminal. PATs are short-lived; when the commands say MAG rejected it, create a new one on
+[myAmSC](https://my.amsc.energy.gov/dashboard) and replace it.
+
+```bash
+export AMSC_TOKEN=<your PAT>
+```
+
+**Use them** in your project folder like the plain agents. Options pass through:
+
+```bash
+cd my-project
+claude-amsc                       # Claude Code on MAG
+codex-alcf -m nemotron-3-ultra    # Codex on ALCF with another model
+opencode-amsc                     # OpenCode on MAG; /models lists the MAG models
+```
+
+The [container page](container.md#4-model-access-and-logins) lists the default models and the variables that
+change them. On your machine Codex keeps its own sandbox; only inside the container do `codex-amsc` and
+`codex-alcf` turn it off. On Windows, run the commands in [WSL](#windows-troubleshooting) or Git Bash.

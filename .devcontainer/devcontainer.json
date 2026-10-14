@@ -10,10 +10,12 @@
     "source=ai-agents-claude,target=/home/dev/.claude,type=volume",
     "source=ai-agents-codex,target=/home/dev/.codex,type=volume",
     "source=ai-agents-opencode,target=/home/dev/.local/share/opencode,type=volume",
-    "source=ai-agents-opencode-config,target=/home/dev/.config/opencode,type=volume"
+    "source=ai-agents-opencode-config,target=/home/dev/.config/opencode,type=volume",
+    "source=ai-agents-gh,target=/home/dev/.config/gh,type=volume",
+    "source=ai-agents-globus,target=/home/dev/.globus,type=volume"
   ],
   // The settings volumes may have been created under another UID (older image, or run.sh on Linux).
-  "postStartCommand": "sudo chown -R dev:dev /home/dev/.claude /home/dev/.codex /home/dev/.local/share/opencode /home/dev/.config/opencode",
+  "postStartCommand": "sudo chown -R dev:dev /home/dev/.claude /home/dev/.codex /home/dev/.local/share/opencode /home/dev/.config/opencode /home/dev/.config/gh /home/dev/.globus",
   "remoteEnv": {
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
     "ANTHROPIC_AUTH_TOKEN": "${localEnv:ANTHROPIC_AUTH_TOKEN}",
@@ -21,8 +23,9 @@
     "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
     "OPENAI_BASE_URL": "${localEnv:OPENAI_BASE_URL}",
     "OPENROUTER_API_KEY": "${localEnv:OPENROUTER_API_KEY}",
+    "AMSC_TOKEN": "${localEnv:AMSC_TOKEN}",
     "ALCF_AI_TOKEN": "${localEnv:ALCF_AI_TOKEN}",
-    "I2CORE_API_KEY": "${localEnv:I2CORE_API_KEY}"
+    "GH_TOKEN": "${localEnv:GH_TOKEN}"
   },
   "customizations": {
     "vscode": {

@@ -4,10 +4,10 @@
 - name: Murat Keceli
   email: keceli@anl.gov
   lead: true
-  topics: [Claude Code, OpenCode, computational chemistry]
+  topics: [Claude Code, OpenCode, Chemistry, Materials Science]
 - name: Aaron Tuor
   email: aaron.tuor@pnnl.gov
-  topics: []
+  topics: [Claude Code, Codex, VS Code, Machine Learning, Deep Learning]
 - name: David Martin
   email: demartin@lbl.gov
   topics: []
@@ -40,7 +40,7 @@
   topics: []
 - name: Stephen Hudson
   email: shudson@anl.gov
-  topics: []
+  topics: [Claude Code, HPC]
 - name: Tanwi Mallick
   email: tmallick@anl.gov
   topics: []
@@ -49,10 +49,10 @@
   topics: []
 - name: Thang Pham
   email: tpham@anl.gov
-  topics: [Codex,Claude Code, Materials Science]
+  topics: [Codex,Claude Code, Chemical Engineering, Materials Science]
 - name: Alvaro Mayagoitia
   email: vama@anl.gov
-  topics: [OpenCode, KiloCode, Materials Science]
+  topics: [OpenCode, KiloCode, Chemistry, Materials Science]
 - name: Bella Yang
   email: bellayang@anl.gov
   topics: []

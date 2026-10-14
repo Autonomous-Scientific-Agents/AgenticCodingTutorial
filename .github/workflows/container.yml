@@ -6,6 +6,7 @@ on:
     paths:
       - Dockerfile
       - entrypoint.sh
+      - bin/**
       - .github/workflows/container.yml
   workflow_dispatch:
 
