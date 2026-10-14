@@ -20,8 +20,8 @@ ends with a check; if the check works, move on.
 
 !!! tip "Easiest and safest: the tutorial container"
     One image has Claude Code, Codex CLI, OpenCode, uv, gh, vim, emacs and VS Code in the browser. The agent only sees
-    the project folder you mount, so it cannot touch the rest of your machine. You only need Git (step 2) and Docker.
-    See [Run in a container](container.md).
+    the project folder you mount, so it cannot touch the rest of your machine. You only need Git (step 2) and
+    Podman (or Docker). See [Run in a container](container.md).
 
 ### What you need
 
@@ -29,7 +29,7 @@ ends with a check; if the check works, move on.
 - **Model access:** a subscription or API key for the tool you pick (Claude for Claude Code, ChatGPT or OpenAI
   for Codex, any provider for OpenCode), or access through [MAG](#model-access) for Genesis Mission teams.
 - **About 30 minutes** and permission to install software. Most steps below do not need administrator rights;
-  Git and Docker Desktop may ask for them.
+  Git and Podman may ask for them.
 
 ### 1. Open a terminal
 
@@ -238,14 +238,14 @@ Then try the [hands-on lab](lab.md): it starts from a specification and a set of
 
 ### Windows troubleshooting
 
-| Problem                                                | Fix                                                                                                                                                       |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `'claude' is not recognized` (or `codex`, `uv`, `git`) | Close the terminal and open a new one. If it persists, rerun the installer and read its last lines: it prints the folder to add to your `PATH`.           |
-| `running scripts is disabled on this system`           | Allow scripts for your user once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then open a new terminal.                                        |
-| `winget` is not recognized                             | Install or update **App Installer** from the Microsoft Store, or use the download links above.                                                            |
-| Commands from a guide use `export VAR=...`             | That is bash syntax. In PowerShell write `$env:VAR = "..."` (current window only).                                                                        |
-| You want a Linux environment instead                   | Run `wsl --install` in an administrator PowerShell, restart, open **Ubuntu** from the Start menu and follow the **Linux** tabs on this page.              |
-| You want the container                                 | Install [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) (it uses WSL 2), then follow [Run in a container](container.md). |
+| Problem                                                | Fix                                                                                                                                             |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'claude' is not recognized` (or `codex`, `uv`, `git`) | Close the terminal and open a new one. If it persists, rerun the installer and read its last lines: it prints the folder to add to your `PATH`. |
+| `running scripts is disabled on this system`           | Allow scripts for your user once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then open a new terminal.                              |
+| `winget` is not recognized                             | Install or update **App Installer** from the Microsoft Store, or use the download links above.                                                  |
+| Commands from a guide use `export VAR=...`             | That is bash syntax. In PowerShell write `$env:VAR = "..."` (current window only).                                                              |
+| You want a Linux environment instead                   | Run `wsl --install` in an administrator PowerShell, restart, open **Ubuntu** from the Start menu and follow the **Linux** tabs on this page.    |
+| You want the container                                 | Install Podman (`winget install -e --id RedHat.Podman`, it uses WSL 2) or Docker Desktop, then follow [Run in a container](container.md).       |
 
 ## Model access
 

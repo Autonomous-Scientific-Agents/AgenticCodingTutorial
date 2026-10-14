@@ -15,29 +15,85 @@ VS Code in the browser ([code-server](https://github.com/coder/code-server)).
 Image: `ghcr.io/autonomous-scientific-agents/agentic-coding:latest` (Linux amd64 and arm64, so it runs on
 Intel and Apple-silicon machines).
 
-## 1. Install Docker
+## 1. Install Podman
 
-Install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) (macOS, Windows) or Docker Engine
-(Linux). [Podman](https://podman.io/) also works: replace `docker` with `podman` in the `pull` command below.
-The run script uses `docker` when it is installed and `podman` otherwise; to choose yourself, set
-`CONTAINER_ENGINE=podman`.
+We recommend [Podman](https://podman.io/): it is open source, free for everyone, and does not need a
+background service running as root. [Docker](#docker-desktop-instead) works too.
+
+=== "macOS"
+
+    Download and run the installer from [podman.io](https://podman.io/docs/installation#macos)
+    (or `brew install podman` if you use Homebrew). Podman runs containers in a small Linux virtual machine;
+    create and start it once:
+
+    ```bash
+    podman machine init
+    podman machine start
+    ```
+
+    After a restart, run `podman machine start` again before using the container.
+
+=== "Windows"
+
+    Podman uses WSL 2. In PowerShell:
+
+    ```powershell
+    winget install -e --id RedHat.Podman
+    ```
+
+    Open a new terminal, then create and start the Podman machine (if WSL is not installed yet, `init` offers
+    to install it; restart and run `init` again):
+
+    ```powershell
+    podman machine init
+    podman machine start
+    ```
+
+    After a restart, run `podman machine start` again before using the container.
+
+=== "Linux"
+
+    ```bash
+    sudo apt update && sudo apt install -y podman     # Ubuntu / Debian
+    # sudo dnf install -y podman                       # Fedora / RHEL
+    ```
+
+    No virtual machine is needed on Linux, and containers run as your own user.
+
+Check that it works:
+
+```bash
+podman run --rm quay.io/podman/hello
+```
+
+Prefer a graphical app? [Podman Desktop](https://podman-desktop.io/) installs Podman and sets up the machine for you.
+
+### Docker Desktop instead
+
+[Docker Desktop](https://docs.docker.com/get-started/get-docker/) (macOS, Windows) or Docker Engine (Linux)
+also works. Docker Desktop is free for personal use, education and small businesses, but larger organizations
+need a paid subscription, so check with your institution. With Docker, write `docker` wherever this page
+says `podman`.
+
+The run script uses `docker` when it is installed and `podman` otherwise. If you have both, choose with
+`CONTAINER_ENGINE=podman` (PowerShell: `$env:CONTAINER_ENGINE = "podman"`).
 
 ## 2. Get the image and the run script
 
 === "macOS / Linux"
 
     ```bash
-    docker pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest
+    podman pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest
     curl -fsSLO https://raw.githubusercontent.com/Autonomous-Scientific-Agents/AgenticCodingTutorial/main/run.sh
     chmod +x run.sh
     ```
 
 === "Windows"
 
-    In PowerShell, with Docker Desktop running:
+    In PowerShell, with the Podman machine running:
 
     ```powershell
-    docker pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest
+    podman pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest
     irm https://raw.githubusercontent.com/Autonomous-Scientific-Agents/AgenticCodingTutorial/main/run.ps1 -OutFile run.ps1
     ```
 
@@ -102,10 +158,10 @@ The script passes these variables from your shell into the container when they a
 ## Tips
 
 - Commit before you prompt: the container protects your machine, git protects your project.
-- Get the newest image with `docker pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest`; the run
+- Get the newest image with `podman pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest`; the run
   script does not update it on its own. Do this whenever you download a newer run script.
 - Use another port with `PORT=8081 /path/to/run.sh code` (PowerShell: `$env:PORT = "8081"` first).
-- Reset all saved logins and settings: `docker volume rm ai-agents-claude ai-agents-codex ai-agents-opencode ai-agents-opencode-config ai-agents-code-server`.
+- Reset all saved logins and settings: `podman volume rm ai-agents-claude ai-agents-codex ai-agents-opencode ai-agents-opencode-config ai-agents-code-server`.
 - On Linux the script makes `dev` use your own user and group ID, so files the agent writes in the project
   belong to you.
 - Inside the container you are user `dev` with `sudo`, so `sudo apt-get install …` works; it is gone after the
