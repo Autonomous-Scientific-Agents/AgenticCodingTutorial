@@ -30,6 +30,12 @@ RUN mkdir -p -m 755 /etc/apt/keyrings \
     && apt-get update && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
+# git talks to GitHub over HTTPS with the gh login (`gh auth login`, or GH_TOKEN from the host).
+# SSH remotes (git@github.com:...) are rewritten to HTTPS, since no SSH keys are in the container.
+RUN git config --system credential.https://github.com.helper '!gh auth git-credential' \
+    && git config --system credential.https://gist.github.com.helper '!gh auth git-credential' \
+    && git config --system url.https://github.com/.insteadOf git@github.com:
+
 # uv: Python versions, virtual environments and packages
 COPY --from=ghcr.io/astral-sh/uv:0.13.0 /uv /uvx /usr/local/bin/
 
@@ -44,6 +50,9 @@ RUN npm install -g \
     opencode-ai \
     && npm cache clean --force
 
+# claude-amsc and claude-alcf: Claude Code with MAG or ALCF Inference Endpoints settings
+COPY bin/ /usr/local/bin/
+
 # Non-root user (Claude Code refuses --dangerously-skip-permissions as root).
 # dev takes UID/GID 1000 from the base image's unused node user, so it matches the usual first
 # user on a Linux host and can write to the mounted project. entrypoint.sh handles other UIDs.
@@ -53,7 +62,7 @@ RUN chmod 755 /usr/local/bin/entrypoint.sh \
     && groupadd -g 1000 dev && useradd -m -s /bin/bash -u 1000 -g 1000 dev \
     && echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev \
     && mkdir -p /workspace /home/dev/.claude /home/dev/.codex /home/dev/.local/share/opencode \
-    /home/dev/.config/opencode /home/dev/.local/share/code-server \
+    /home/dev/.config/opencode /home/dev/.config/gh /home/dev/.local/share/code-server \
     && chown -R dev:dev /workspace /home/dev
 USER dev
 WORKDIR /workspace

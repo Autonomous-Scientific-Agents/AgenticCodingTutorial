@@ -1,0 +1,32 @@
+#!/bin/bash
+# Claude Code on an ALCF Inference Endpoint that speaks the Anthropic Messages API (Minerva):
+# https://docs.alcf.anl.gov/services/inference-endpoints/agents/
+# Needs ALCF_AI_TOKEN; run.sh passes a fresh one in when `alcf-tokens login inference` was run on the host.
+#
+#   claude-alcf                               start Claude Code with the default model
+#   ALCF_CLAUDE_MODEL=<name> claude-alcf      pick another model
+set -euo pipefail
+
+# Outside the container, get the token from alcf-tokens directly.
+if [[ -z "${ALCF_AI_TOKEN:-}" ]] && command -v alcf-tokens >/dev/null 2>&1; then
+  ALCF_AI_TOKEN="$(alcf-tokens get-token inference)"
+fi
+if [[ -z "${ALCF_AI_TOKEN:-}" ]]; then
+  echo "claude-alcf: ALCF_AI_TOKEN is not set. On the host run 'alcf-tokens login inference', then restart the container." >&2
+  exit 1
+fi
+
+model="${ALCF_CLAUDE_MODEL:-inkling-bf16}"
+
+unset ANTHROPIC_API_KEY  # would be sent instead of the ALCF token
+export ANTHROPIC_AUTH_TOKEN="$ALCF_AI_TOKEN"
+export ANTHROPIC_BASE_URL="${ALCF_ANTHROPIC_BASE_URL:-https://inference-api.alcf.anl.gov/resource_server/minerva/api/v1}"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="$model"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="$model"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="$model"
+export CLAUDE_CODE_SUBAGENT_MODEL="$model"
+export DISABLE_NON_ESSENTIAL_MODEL_CALLS=1
+export DISABLE_TELEMETRY=1
+export CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1
+
+exec claude "$@"
