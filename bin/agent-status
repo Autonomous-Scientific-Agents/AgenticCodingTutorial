@@ -66,15 +66,20 @@ check() {
 # MAG answers /v1/models in the OpenAI format: {"data": [{"id": ...}, ...]}.
 MAG_MODELS_PY='
 import json, sys
-for model in sorted(m["id"] for m in json.load(sys.stdin).get("data") or []):
+try:
+    models = sorted(m["id"] for m in json.load(sys.stdin).get("data") or [])
+except (ValueError, KeyError, TypeError, AttributeError):
+    sys.exit("MAG: unexpected answer to /v1/models (not a model list)")
+print("MAG:")
+for model in models:
     print("  " + model)
 '
 
 # ALCF: list-endpoints names the clusters, frameworks and models; <cluster>/jobs says which models are running
 # (hot, or still starting) or queued. Offline models load when someone sends a request, which can take minutes.
 ALCF_MODELS_PY='
-import json, os, sys
-folder, hot_only = sys.argv[1], sys.argv[2] == "hot"
+import json, os, re, sys
+folder, mode = sys.argv[1], sys.argv[2]
 def load(name):
     try:
         with open(os.path.join(folder, name)) as f:
@@ -85,7 +90,17 @@ rank = {"hot": 0, "starting": 1, "queued": 2, "offline": 3, "unknown": 4}
 def names(value):
     items = value if isinstance(value, list) else str(value or "").split(",")
     return [str(m).strip() for m in items if str(m).strip()]
-clusters = (load("endpoints.json") or {}).get("clusters") or {}
+def table(value):
+    return value if isinstance(value, dict) else {}
+endpoints = load("endpoints.json")
+clusters = endpoints.get("clusters") if isinstance(endpoints, dict) else None
+# "clusters" prints the names for the shell to fetch <cluster>/jobs; it stays quiet, the listing reports errors.
+if mode == "clusters":
+    print(" ".join(c for c in table(clusters) if re.match(r"^[A-Za-z0-9_-]+$", c)))
+    sys.exit()
+if not isinstance(clusters, dict):
+    sys.exit("ALCF: unexpected answer to list-endpoints (no cluster list)")
+print("ALCF (hot: loaded now; starting or queued: loading; offline: loads on the first request, which can take minutes; unknown: no live status):")
 for cluster in sorted(clusters):
     jobs = load("jobs-" + cluster + ".json")
     known = isinstance(jobs, dict)
@@ -93,6 +108,8 @@ for cluster in sorted(clusters):
     state = {}
     for key in ("running", "queued"):
         for job in (jobs if known else {}).get(key) or []:
+            if not isinstance(job, dict):
+                continue
             status = "queued"
             if key == "running":
                 ready = str(job.get("Model Status") or "").lower()
@@ -102,14 +119,14 @@ for cluster in sorted(clusters):
                 if rank[status] < rank[state.get((framework, model), "offline")]:
                     state[(framework, model)] = status
     note = "" if known else ", live status unavailable"
-    for framework, info in sorted((clusters[cluster].get("frameworks") or {}).items()):
+    for framework, info in sorted(table(table(clusters[cluster]).get("frameworks")).items()):
         def status_of(m):
             if not known:
                 return "unknown"
             return min(state.get((framework.lower(), m), "offline"), state.get(("", m), "offline"), key=rank.get)
-        models = sorted(set(info.get("models") or []), key=lambda m: (rank[status_of(m)], m.lower()))
+        models = sorted(set(table(info).get("models") or []), key=lambda m: (rank[status_of(m)], m.lower()))
         hot = [m for m in models if status_of(m) == "hot"]
-        if hot_only:
+        if mode == "hot":
             print("%s (%s): %d hot%s" % (cluster, framework, len(hot), note))
             models = hot
         else:
@@ -119,19 +136,19 @@ for cluster in sorted(clusters):
 '
 
 # List models. "all" covers MAG and ALCF; "hot" shows only the ALCF models that are loaded now.
-models() {
+# The ( ) body runs in a subshell, so the trap still sees $folder and removes it on any exit.
+models() (
   local which="$1" folder status token cluster rc=0
   if ! command -v python3 >/dev/null 2>&1; then
     echo "$_cmd: listing models needs python3" >&2
     return 1
   fi
   folder="$(mktemp -d)" || return 1
-  trap "rm -f '$folder'/*.json; rmdir '$folder'" EXIT
+  trap 'rm -rf "$folder"' EXIT
   if [[ "$which" == all ]]; then
     if [[ -z "${AMSC_TOKEN:-}" ]]; then
       echo "MAG: no AMSC_TOKEN (the *-amsc commands ask for a PAT)"
     elif status="$(_http_status "$AMSC_TOKEN" "$MAG_URL/v1/models" "$folder/mag.json")" && [[ "$status" == 200 ]]; then
-      echo "MAG:"
       python3 -c "$MAG_MODELS_PY" < "$folder/mag.json" || rc=1
     else
       report "MAG (AMSC_TOKEN)" "$status" "Renew: create a new PAT, then: read -rs AMSC_TOKEN && export AMSC_TOKEN" || rc=1
@@ -154,10 +171,7 @@ models() {
     report "ALCF" "$status" "Renew: alcf-tokens login inference"
     return 1
   fi
-  echo "ALCF (hot: loaded now; starting or queued: loading; offline: loads on the first request, which can take minutes; unknown: no live status):"
-  for cluster in $(python3 -c 'import json, re, sys
-print(" ".join(c for c in json.load(sys.stdin).get("clusters") or {} if re.match(r"^[A-Za-z0-9_-]+$", c)))' \
-      < "$folder/endpoints.json"); do
+  for cluster in $(python3 -c "$ALCF_MODELS_PY" "$folder" clusters); do
     # All clusters at once, so a slow service costs one timeout rather than one per cluster.
     { [[ "$(_http_status "$token" "$ALCF_URL/$cluster/jobs" "$folder/jobs-$cluster.json")" == 200 ]] ||
       rm -f "$folder/jobs-$cluster.json"; } &
@@ -165,7 +179,7 @@ print(" ".join(c for c in json.load(sys.stdin).get("clusters") or {} if re.match
   wait
   python3 -c "$ALCF_MODELS_PY" "$folder" "$which" || rc=1
   return "$rc"
-}
+)
 
 case "${1:-}" in
   "") summary ;;
