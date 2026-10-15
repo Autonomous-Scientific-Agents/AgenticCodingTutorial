@@ -84,8 +84,7 @@ shell history.
 
 **Check:** `ls -l ~/.bash_secrets` starts with `-rw-------`.
 
-PATs are short-lived. When MAG rejects yours, generate a new one, replace the line, and load it again
-(`source ~/.bash_secrets && use-amsc` in a shell that is already open).
+PATs are short-lived; see [When a token expires](#when-a-token-expires) for how to replace it.
 
 For ALCF there is nothing to store. `alcf-tokens` keeps your login in `~/.globus` and gives out fresh tokens when
 asked. Log in once, and again when ALCF asks (every 30 days):
@@ -121,9 +120,11 @@ cat >> ~/.bash_functions <<'EOF'
 #   use-amsc | use-alcf | use-default   switch this shell; then run plain `claude`
 #   claude-amsc | claude-alcf [args]    run Claude Code once on that backend; this shell is unchanged
 #   agent-backend                       show which backend this shell uses
+#   agent-status --check                ask MAG and ALCF whether your tokens work
 
 _MAG_URL=https://mag.genesis.americansciencecloud.org
 _ALCF_URL=https://inference-api.alcf.anl.gov/resource_server/minerva/api   # Claude Code adds /v1/messages
+_ALCF_CHECK_URL=https://inference-api.alcf.anl.gov/resource_server/list-endpoints
 
 use-default() {
   unset ANTHROPIC_AUTH_TOKEN ANTHROPIC_BASE_URL ANTHROPIC_MODEL \
@@ -188,6 +189,45 @@ claude-alcf() ( use-alcf && command claude "$@" )
 
 agent-backend() {
   echo "${AGENT_BACKEND:-default} (${ANTHROPIC_BASE_URL:-Anthropic, with your own login or API key})"
+}
+
+# HTTP status for a token: 200 works, 401 or 403 rejected, 000 no answer.
+# The header goes in on stdin, so the token does not show up in the process list.
+_agent_http() {
+  printf 'Authorization: Bearer %s\n' "$1" | curl -s -o /dev/null -w '%{http_code}' -m 10 -H @- "$2" || true
+}
+
+_agent_report() {
+  case "$2" in
+    200) echo "$1: valid" ;;
+    401|403) echo "$1: rejected (HTTP $2), expired or invalid. Renew: $3" ;;
+    000) echo "$1: no answer (network, proxy or service down)" ;;
+    *) echo "$1: unexpected answer (HTTP $2)" ;;
+  esac
+}
+
+agent-status() {
+  local token
+  case "${1:-}" in
+    "")
+      agent-backend
+      echo "Test your tokens: agent-status --check" ;;
+    --check)
+      if [ -n "${AMSC_TOKEN:-}" ]; then
+        _agent_report MAG "$(_agent_http "$AMSC_TOKEN" "$_MAG_URL/v1/models")" \
+          "read -rs AMSC_TOKEN && export AMSC_TOKEN, then update ~/.bash_secrets"
+      else
+        echo "MAG: no AMSC_TOKEN. Add it to ~/.bash_secrets"
+      fi
+      if ! command -v alcf-tokens >/dev/null 2>&1; then
+        echo "ALCF: alcf-tokens not installed (uv tool install alcf-tokens)"
+      elif token="$(alcf-tokens get-token inference 2>/dev/null)" && [ -n "$token" ]; then
+        _agent_report ALCF "$(_agent_http "$token" "$_ALCF_CHECK_URL")" "alcf-tokens login inference"
+      else
+        echo "ALCF: not logged in. Log in: alcf-tokens login inference"
+      fi ;;
+    *) echo "usage: agent-status [--check]" >&2; return 2 ;;
+  esac
 }
 # <<< agent backends <<<
 EOF
@@ -270,8 +310,42 @@ To see what a backend sets, run `type claude-amsc` or
     and use cheaper models for routine work (see AmSC's
     [Model Recommendations](https://docs.amsc.energy.gov/model-selection)).
 
-ALCF tokens last 48 hours. If a shell has been on ALCF that long, run `use-alcf` again to get a fresh token.
-`claude-alcf` gets a fresh token every time it starts.
+### When a token expires
+
+MAG PATs are short-lived, ALCF access tokens last 48 hours, and the ALCF login itself lasts 30 days. To see
+whether your tokens still work:
+
+```bash
+agent-status --check
+```
+
+```text
+MAG: rejected (HTTP 401), expired or invalid. Renew: read -rs AMSC_TOKEN && export AMSC_TOKEN, then update ~/.bash_secrets
+ALCF: valid
+```
+
+It asks MAG and ALCF directly and never prints the tokens.
+
+**New MAG PAT.** Create one on the [myAmSC dashboard](https://my.amsc.energy.gov/dashboard) and copy it. Then:
+
+1. Use it in the shell you have open now. Run the line below, paste the PAT (nothing appears while you paste)
+   and press Enter:
+
+    ```bash
+    read -rs AMSC_TOKEN && export AMSC_TOKEN
+    use-amsc        # only if this shell was switched to MAG
+    ```
+
+    `read` keeps the PAT out of your shell history; `export AMSC_TOKEN=<PAT>` works too, but is saved there.
+
+2. Keep it for new terminals: replace the `AMSC_TOKEN` line in `~/.bash_secrets` (step 2).
+
+**ALCF.** Usually nothing to do: `claude-alcf` gets a fresh token every time it starts, and so does `use-alcf`
+(run it again in a shell that has been on ALCF for 48 hours). When the 30-day login runs out, log in again:
+
+```bash
+alcf-tokens login inference
+```
 
 !!! tip "Things that override these settings"
     - `env` entries in `~/.claude/settings.json` or in a project's `.claude/settings.json` take precedence over your

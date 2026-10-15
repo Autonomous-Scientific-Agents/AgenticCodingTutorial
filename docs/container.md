@@ -190,12 +190,24 @@ a personal access token (PAT).
     [Environment]::SetEnvironmentVariable('AMSC_TOKEN', '<your PAT>', 'User')
     ```
 
-PATs are short-lived. When MAG answers `401 Unauthorized`, generate a new PAT on
-[myAmSC](https://my.amsc.energy.gov/dashboard), replace the value, open a new terminal and restart the container.
-
 No `AMSC_TOKEN` yet, or it expired? Run `claude-amsc` anyway: it explains where to get a PAT, asks you to paste
-it (hidden), checks it with MAG, and uses it until the container stops. Nothing is saved, so set it on the host
-as above to skip this next time.
+it (hidden), checks it with MAG, and uses it until the container stops.
+
+**When the PAT expires.** PATs are short-lived. Check your tokens at any time inside the container:
+
+```bash
+agent-status --check          # asks MAG and ALCF whether your tokens work; never prints them
+```
+
+When MAG rejects the PAT, the `*-amsc` commands ask for a new one for that run. To use a new PAT for the rest of
+the container shell, paste it once (nothing appears while you paste, then press Enter):
+
+```bash
+read -rs AMSC_TOKEN && export AMSC_TOKEN
+```
+
+For the next container, replace `AMSC_TOKEN` on your host as in step 1. Create the new PAT on
+[myAmSC](https://my.amsc.energy.gov/dashboard).
 
 **2. Start an agent on MAG.** The container has one command per tool. Each uses the settings MAG documents for
 [Claude Code](https://docs.amsc.energy.gov/client-applications/coding-tools/claude-code),
@@ -275,8 +287,12 @@ refresh on their own; ALCF asks you to log in again every 30 days.
     ```
 
     The run script then calls `alcf-tokens get-token inference` each time it starts and passes a fresh token
-    as `ALCF_AI_TOKEN`; this token takes precedence over the one from the in-container login. Tokens last
-    48 hours, so restart a container that runs longer than that.
+    as `ALCF_AI_TOKEN`. The commands use it while ALCF accepts it. After 48 hours they fall back to the
+    in-container login, or you can restart the container to get a fresh one.
+
+**When a token expires.** `agent-status --check` shows whether the ALCF token works. The commands get fresh
+tokens on their own, so you only need to log in again (`alcf-tokens login inference`) when ALCF asks, every
+30 days.
 
 **2. Start an agent on ALCF.** The commands use Minerva, which serves `inkling-bf16`, `nemotron-3-ultra` and
 `gpt-oss-120b`. The [ALCF agents page](https://docs.alcf.anl.gov/services/inference-endpoints/agents/) lists

@@ -1,23 +1,69 @@
 #!/bin/bash
-# One line about model access and GitHub, shown when an interactive shell starts in the container.
-# Checks only variables and files, so it adds no delay.
+# Model access and GitHub at a glance. The container shows the summary when an interactive shell starts.
+#
+#   agent-status           one line from variables and files only, so it adds no delay
+#   agent-status --check   ask MAG and ALCF whether your tokens work (never prints them)
+set -uo pipefail
+source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
 
-if [[ -n "${AMSC_TOKEN:-}" ]]; then
-  mag="MAG ready (claude-amsc, codex-amsc, opencode-amsc)"
-else
-  mag="MAG: no AMSC_TOKEN (the *-amsc commands ask for a PAT)"
-fi
+summary() {
+  local mag alcf gh
+  if [[ -n "${AMSC_TOKEN:-}" ]]; then
+    mag="MAG ready (claude-amsc, codex-amsc, opencode-amsc)"
+  else
+    mag="MAG: no AMSC_TOKEN (the *-amsc commands ask for a PAT)"
+  fi
+  if [[ -n "${ALCF_AI_TOKEN:-}" ]] || compgen -G "$HOME/.globus/app/*/alcf_tokens/tokens.json" >/dev/null; then
+    alcf="ALCF ready (claude-alcf, codex-alcf, opencode-alcf)"
+  else
+    alcf="ALCF: not logged in (the *-alcf commands walk you through it)"
+  fi
+  if [[ -n "${GH_TOKEN:-}" || -s "$HOME/.config/gh/hosts.yml" ]]; then
+    gh="GitHub ready"
+  else
+    gh="GitHub: run gh auth login"
+  fi
+  echo "$mag · $alcf · $gh"
+}
 
-if [[ -n "${ALCF_AI_TOKEN:-}" ]] || compgen -G "$HOME/.globus/app/*/alcf_tokens/tokens.json" >/dev/null; then
-  alcf="ALCF ready (claude-alcf, codex-alcf, opencode-alcf)"
-else
-  alcf="ALCF: not logged in (the *-alcf commands walk you through it)"
-fi
+# One line for a token check; returns 1 unless the service accepted the token.
+report() {
+  local label="$1" status="$2" fix="$3"
+  case "$status" in
+    200) echo "$label: valid"; return 0 ;;
+    401|403) echo "$label: rejected (HTTP $status), expired or invalid. $fix" ;;
+    000) echo "$label: no answer (network, proxy or service down)" ;;
+    *) echo "$label: unexpected answer (HTTP $status)" ;;
+  esac
+  return 1
+}
 
-if [[ -n "${GH_TOKEN:-}" || -s "$HOME/.config/gh/hosts.yml" ]]; then
-  gh="GitHub ready"
-else
-  gh="GitHub: run gh auth login"
-fi
+check() {
+  local rc=0 token
+  if [[ -n "${AMSC_TOKEN:-}" ]]; then
+    report "MAG (AMSC_TOKEN)" "$(_mag_check "$AMSC_TOKEN")" "Renew: create a new PAT, then: read -rs AMSC_TOKEN && export AMSC_TOKEN" || rc=1
+  else
+    echo "MAG: no AMSC_TOKEN (the *-amsc commands ask for a PAT)"
+  fi
+  if [[ -n "${ALCF_AI_TOKEN:-}" ]]; then
+    report "ALCF (ALCF_AI_TOKEN, from the host)" "$(_alcf_check "$ALCF_AI_TOKEN")" \
+      "The *-alcf commands fall back to the alcf-tokens login." || rc=1
+  fi
+  if command -v alcf-tokens >/dev/null 2>&1; then
+    if token="$(alcf-tokens get-token inference </dev/null 2>/dev/null)" && [[ -n "$token" ]]; then
+      report "ALCF (alcf-tokens login)" "$(_alcf_check "$token")" "Renew: alcf-tokens login inference" || rc=1
+    else
+      echo "ALCF (alcf-tokens login): not logged in. Log in: alcf-tokens login inference"
+    fi
+  elif [[ -z "${ALCF_AI_TOKEN:-}" ]]; then
+    echo "ALCF: not set up (install alcf-tokens: uv tool install alcf-tokens)"
+  fi
+  return "$rc"
+}
 
-echo "$mag · $alcf · $gh"
+case "${1:-}" in
+  "") summary ;;
+  --check) check ;;
+  -h|--help) sed -n '2,5s/^# \{0,1\}//p' "$0" ;;
+  *) echo "usage: $_cmd [--check]" >&2; exit 2 ;;
+esac

@@ -287,10 +287,10 @@ uv tool install alcf-tokens
 
 ```bash
 mkdir -p ~/.local/bin && cd ~/.local/bin
-for f in agent-tokens.sh claude-amsc claude-alcf codex-amsc codex-alcf opencode-amsc opencode-alcf; do
+for f in agent-tokens.sh agent-status claude-amsc claude-alcf codex-amsc codex-alcf opencode-amsc opencode-alcf; do
   curl -fsSLO "https://raw.githubusercontent.com/Autonomous-Scientific-Agents/AgenticCodingTutorial/main/bin/$f"
 done
-chmod +x claude-amsc claude-alcf codex-amsc codex-alcf opencode-amsc opencode-alcf
+chmod +x agent-status claude-amsc claude-alcf codex-amsc codex-alcf opencode-amsc opencode-alcf
 ```
 
 Keep `agent-tokens.sh` in the same folder: the commands read it to handle tokens. Run the loop again to update.
@@ -298,8 +298,9 @@ If you cloned this repository, you can instead add its `bin` folder to your `PAT
 (`export PATH="/path/to/AgenticCodingTutorial/bin:$PATH"` in `~/.zshrc` or `~/.bashrc`) and update with `git pull`.
 
 **Save your MAG PAT** so you are not asked every time. Add this line to `~/.zshrc` (macOS) or `~/.bashrc` (Linux)
-and open a new terminal. PATs are short-lived; when the commands say MAG rejected it, create a new one on
-[myAmSC](https://my.amsc.energy.gov/dashboard) and replace it.
+and open a new terminal. PATs are short-lived. `agent-status --check` tells you whether your MAG and ALCF tokens still work. When MAG
+rejects the PAT, create a new one on [myAmSC](https://my.amsc.energy.gov/dashboard) and replace it in your
+startup file. For the terminal you have open, run `read -rs AMSC_TOKEN && export AMSC_TOKEN` and paste it.
 
 ```bash
 export AMSC_TOKEN=<your PAT>
