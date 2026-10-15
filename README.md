@@ -34,16 +34,18 @@ Kilo Code), choosing a model and a budget, the hands-on lab, and the list of hel
 - [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) — reusable skills, with setup notes for OpenCode.
 - [ccusage](https://github.com/ryoppippi/ccusage) — token and cost reports from local agent logs (`npx ccusage@latest daily`).
 
-## Skills and MCP servers
+## Skills, MCP servers and hooks
 
+- [Genesis Skills](https://gitlab.osti.gov/genesis/genesis-skills) — Genesis Mission skills for science and engineering (HPC, AmSC, literature, plasma simulation, data and evaluation); upstream on [GitHub](https://github.com/AI-ModCon/genesis-skills).
 - [anthropics/skills](https://github.com/anthropics/skills) · [openai/skills](https://github.com/openai/skills) · [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) — skill collections.
 - [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) · [MCP Registry](https://registry.modelcontextprotocol.io/) · [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) — MCP servers.
+- [Claude Code hooks](https://code.claude.com/docs/en/hooks) · [Codex hooks](https://developers.openai.com/codex/hooks) · [OpenCode plugins](https://opencode.ai/docs/plugins/) — hooks that run commands at fixed points.
 - [ChemGraph](https://github.com/argonne-lcf/ChemGraph) — computational chemistry agent with an MCP server.
 - [AtomisticSkills](https://github.com/learningmatter-mit/AtomisticSkills) — computational chemistry skills.
 - [claude-replay](https://github.com/Autonomous-Scientific-Agents/claude-replay) — turn an agent session into an HTML replay.
 - [ai4s-skills](https://github.com/ai4s-research/ai4s-skills) — skill collection for AI-for-science work.
 - [claude-scholar](https://github.com/Galaxy-Dawn/claude-scholar) — skill collection for research.
-- More, with setup for each tool: [Skills and MCP](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/skills-mcp/).
+- More, with setup for each tool: [Skills](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/skills/), [MCP servers](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/mcp/) and [Hooks](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/hooks/).
 
 ## Benchmarks: how to read a leaderboard
 
