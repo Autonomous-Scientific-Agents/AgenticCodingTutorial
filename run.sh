@@ -76,7 +76,7 @@ passthrough=(
   CLAUDE_CODE_SUBAGENT_MODEL CLAUDE_CODE_MAX_OUTPUT_TOKENS CLAUDE_CODE_AUTO_COMPACT_WINDOW
   CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS CLAUDE_CODE_NO_FLICKER
   DISABLE_TELEMETRY DISABLE_NON_ESSENTIAL_MODEL_CALLS
-  OPENAI_API_KEY OPENAI_BASE_URL OPENROUTER_API_KEY
+  OPENAI_API_KEY OPENAI_BASE_URL OPENROUTER_API_KEY I2CORE_API_KEY
   GH_TOKEN
   GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL
 )
@@ -86,10 +86,22 @@ done
 
 # Make dev (UID/GID 1000 in the image) own the mounted project, so the agent can edit it and
 # the files stay yours on the host. Docker Desktop (macOS, Windows) already takes care of this.
+renumber=false
 if [[ "$("$ENGINE" --version 2>/dev/null)" == podman* ]] \
     && [[ "$("$ENGINE" info -f '{{.Host.Security.Rootless}}' 2>/dev/null)" == true ]]; then
-  args+=(--userns=keep-id)
+  # Rootless Podman: map your user to dev. Podman before 4.3 (e.g. Ubuntu 22.04) has no keep-id:uid=,
+  # so there keep-id maps your user to your own UID and entrypoint.sh renumbers dev to match.
+  IFS=. read -r major minor _ <<<"$("$ENGINE" info -f '{{.Version.Version}}' 2>/dev/null)"
+  if (( ${major:-0} > 4 || (${major:-0} == 4 && ${minor:-0} >= 3) )); then
+    args+=(--userns=keep-id:uid=1000,gid=1000)
+  else
+    args+=(--userns=keep-id)
+    [[ "$(id -u):$(id -g)" != 1000:1000 ]] && renumber=true
+  fi
 elif [[ "$(uname -s)" == Linux && "$(id -u)" != 0 && "$(id -u):$(id -g)" != 1000:1000 ]]; then
+  renumber=true
+fi
+if $renumber; then
   # entrypoint.sh renumbers dev to this UID/GID, then drops from root to dev.
   # An image from before entrypoint.sh existed would just stay root, so refuse to use it.
   if "$ENGINE" image inspect "$IMAGE" >/dev/null 2>&1 \

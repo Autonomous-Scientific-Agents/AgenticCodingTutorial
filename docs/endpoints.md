@@ -463,9 +463,9 @@ List all available models and add them to the `models` object above — fetch fr
 
 ## In the container
 
-The tutorial `run.sh` and `run.ps1` (and the dev container) pass these from your host when they are set:
-`ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`,
-`OPENROUTER_API_KEY`, `ALCF_AI_TOKEN` and `I2CORE_API_KEY`. Set the keys on the host, then start the
+The tutorial `run.sh` and `run.ps1` (and the dev container) pass `ALCF_AI_TOKEN`, `I2CORE_API_KEY`, the
+`OPENAI_*` and `ANTHROPIC_*` keys and others from your host when they are set; the full list is in
+[Run in a container](container.md#4-model-access-and-logins). Set the keys on the host, then start the
 container:
 
 ```bash
@@ -479,8 +479,9 @@ the `provider` block in an `opencode.json` at the root of your project (it is mo
 `{env:...}` keys keep secrets out of the file), or create `~/.config/opencode/opencode.json` once inside the
 container; that folder is a named volume, so it is kept across runs.
 
-**argo-proxy on the host.** Inside the container, `localhost` is the container itself. With Docker Desktop
-(macOS, Windows), use `http://host.docker.internal:44497` wherever this page says `http://localhost:44497`.
+**argo-proxy on the host.** Inside the container, `localhost` is the container itself. Use
+`http://host.containers.internal:44497` with Podman, or `http://host.docker.internal:44497` with Docker Desktop
+(macOS, Windows), wherever this page says `http://localhost:44497`.
 
 ---
 

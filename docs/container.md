@@ -156,6 +156,7 @@ The script passes these variables when they are set:
   `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS`, `CLAUDE_CODE_NO_FLICKER`, `CLAUDE_CODE_SUBAGENT_MODEL`,
   `DISABLE_TELEMETRY` and `DISABLE_NON_ESSENTIAL_MODEL_CALLS`
 - `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENROUTER_API_KEY`
+- `I2CORE_API_KEY` for [i2-core](endpoints.md#i2-core)
 
 When a shell starts in the container, one line shows what is ready, for example
 `MAG ready (claude-amsc) · ALCF: not logged in (claude-alcf walks you through it) · GitHub ready`.
@@ -256,6 +257,7 @@ the current endpoints and models.
 | `opencode-alcf` | `inkling-bf16` | `/models` in OpenCode, `-m alcf/nemotron-3-ultra`, or set `ALCF_OPENCODE_MODEL` |
 
 Other endpoints: set `ALCF_ANTHROPIC_BASE_URL` (Claude Code) or `ALCF_OPENAI_BASE_URL` (Codex, OpenCode).
+To set up the tools by hand instead, see [Custom endpoints: ALCF Inference Endpoints](endpoints.md#alcf-inference-endpoints).
 Claude Code and Codex warn that they do not know these models and fall back to default settings; that is
 expected. `gpt-oss-120b` does not work with Codex on Minerva.
 

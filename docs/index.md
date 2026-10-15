@@ -26,7 +26,7 @@ Build with tests, make it fast, give it a face.
 - [Skills and MCP](skills-mcp.md): extend the agent with procedures and tools; where to find good ones.
 - [Models and budget](models.md): how to choose, and how to see what you spend.
 - [Custom endpoints](endpoints.md): argo-proxy, argo-shim, ALCF Inference Endpoints and i2-core.
-- [Hands-on lab](lab.md): the point-group classifier, with the demo repositories.
+- [Hands-on demo](lab.md): demo repositories.
 - [Helpers](helpers.md): who to ask, and about what.
 
 Model access for Genesis Mission teams: [AmSC Model Access Gateway (MAG)](https://docs.amsc.energy.gov/model-access-gateway/).
