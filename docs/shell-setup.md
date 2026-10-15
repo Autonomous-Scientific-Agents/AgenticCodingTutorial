@@ -1,9 +1,15 @@
-# Shell setup without a container
+# Shell setup
 
-You can run Claude Code on MAG or on the ALCF Inference Endpoints straight from your shell, with no container.
-Two small files in your home directory do it: one holds your tokens, the other defines the commands. The setup
-works the same in bash and zsh, so you can copy it to any Linux or macOS machine, including the login nodes of
-supercomputers at ALCF, OLCF and NERSC.
+You can run Claude Code on MAG or on the ALCF Inference Endpoints straight from your shell. Two small files in
+your home directory do it: one holds your tokens, the other defines the commands. The setup works the same in
+bash and zsh, so you can use it on any Linux or macOS machine, including the login nodes of supercomputers at
+ALCF, OLCF and NERSC.
+
+!!! tip "Prefer an isolated setup? Use the container"
+    The [tutorial container](container.md) has the same `claude-amsc` and `claude-alcf` commands (plus Codex
+    and OpenCode versions) built in, and the agent sees only the project folder you mount. It needs Podman or
+    Docker, which shared systems such as supercomputers often do not provide. There, and on any machine where
+    you already work in a shell, use the setup on this page.
 
 The MAG settings come from the AmSC guide
 [Claude Code with MAG](https://docs.amsc.energy.gov/client-applications/coding-tools/claude-code/), which also
@@ -17,48 +23,72 @@ with ALCF. If AmSC changes its recommendations, follow the AmSC guide.
     provider. Do not point it at export-controlled, proprietary, personal or otherwise restricted data unless
     you have permission. MAG users must also follow the [AmSC policies](https://docs.amsc.energy.gov/Policies/acknowledgement).
 
-When you are done, you can do either of these:
+The setup has five steps. Each one ends with a check.
 
-- run `claude-amsc` or `claude-alcf` to start Claude Code once on that backend, or
-- run `use-amsc`, `use-alcf` or `use-default` to switch the current shell, then run plain `claude`.
+1. Install Claude Code (and, for ALCF, `alcf-tokens`).
+2. Put your MAG token in `~/.bash_secrets`.
+3. Add the agent commands to `~/.bash_functions`.
+4. Load both files in your shell startup file, and in the current shell.
+5. Run `claude-amsc` or `claude-alcf`, or switch the shell with `use-amsc`, `use-alcf` and `use-default`.
+
+The file names are only a convention; zsh users can keep them. Steps 2 to 4 **add to** files you may already
+have. They never overwrite them.
 
 ## 1. Install the tools
 
-You do not need administrator rights. Both installers put their programs in `~/.local/bin`.
+You do not need administrator rights. The installers put their programs in `~/.local/bin`.
 
 ```bash
-curl -fsSL https://claude.ai/install.sh | bash        # Claude Code
-curl -LsSf https://astral.sh/uv/install.sh | sh       # uv, needed only for ALCF
-uv tool install alcf-tokens                           # ALCF login helper, needed only for ALCF
+curl -fsSL https://claude.ai/install.sh | bash     # Claude Code
 ```
 
-Open a new terminal and check that both work: `claude --version` and `alcf-tokens --help`. If a command is not
-found, add `export PATH="$HOME/.local/bin:$PATH"` to your startup file (step 4).
+For ALCF you also need uv and `alcf-tokens`. Skip this if you only use MAG:
 
-## 2. Store your tokens in `~/.bash_secrets`
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh    # uv
+```
+
+**Open a new terminal** so it finds `uv`, then run:
+
+```bash
+uv tool install alcf-tokens                        # ALCF login helper
+```
+
+**Check:** `claude --version` (and `alcf-tokens --help` for ALCF) prints output. If you see
+`command not found`, open a new terminal. If it still fails, add `export PATH="$HOME/.local/bin:$PATH"` to
+`~/.bashrc` or `~/.zshrc`.
+
+## 2. Store your MAG token in `~/.bash_secrets`
 
 Only MAG needs a stored token. Get a MAG personal access token (PAT) from the
 [myAmSC dashboard](https://my.amsc.energy.gov/dashboard): select your Genesis Mission project, then
 **Personal Access Tokens** › **Generate PAT**. The token is shown only once, so copy it then. The AmSC page
 [Get started with MAG](https://docs.amsc.energy.gov/mag-get-started) covers requesting access and creating tokens.
 
-Create the file and make it readable only by you:
+Create the file if it does not exist, make it readable only by you, and open it in an editor:
 
 ```bash
 touch ~/.bash_secrets && chmod 600 ~/.bash_secrets
+nano ~/.bash_secrets      # or vim, emacs, code
 ```
 
-Then add your token to it:
+Add this line at the end, with your PAT between the quotes. If the file already has an `AMSC_TOKEN` line,
+replace that line instead.
 
 ```bash
-# Personal tokens. Keep private: chmod 600. Never copy into a git repository.
 export AMSC_TOKEN='<your MAG PAT>'
 ```
 
-PATs are short-lived. When MAG rejects yours, generate a new one and replace this line.
+Use an editor rather than `echo ... >> ~/.bash_secrets`. A command line with the token in it ends up in your
+shell history.
 
-ALCF needs nothing here. `alcf-tokens` keeps your login in `~/.globus` and gives out fresh tokens when asked. Log
-in once (and again when ALCF asks, every 30 days):
+**Check:** `ls -l ~/.bash_secrets` starts with `-rw-------`.
+
+PATs are short-lived. When MAG rejects yours, generate a new one, replace the line, and load it again
+(`source ~/.bash_secrets && use-amsc` in a shell that is already open).
+
+For ALCF there is nothing to store. `alcf-tokens` keeps your login in `~/.globus` and gives out fresh tokens when
+asked. Log in once, and again when ALCF asks (every 30 days):
 
 ```bash
 alcf-tokens login inference
@@ -67,11 +97,26 @@ alcf-tokens login inference
 The command prints a Globus link. Open it in a browser on any computer, log in with your ALCF account, and paste
 the code back into the terminal.
 
-## 3. Define the commands in `~/.bash_functions`
+## 3. Add the commands to `~/.bash_functions`
 
-Save this as `~/.bash_functions`:
+First check that you have no older commands with the same names. The AmSC guide, for example, has you define a
+`claude-amsc` function:
 
 ```bash
+type claude-amsc claude-alcf use-amsc use-alcf 2>/dev/null
+```
+
+If this prints `function` or `alias` for a name, delete that older definition from your startup files first. A
+file path, such as this repository's `bin/claude-amsc`, can stay.
+
+Then copy this whole block into your terminal. It **appends** the commands to `~/.bash_functions` and creates the
+file if needed. Whatever the file already contains stays. Run it only once; to change the commands later, see
+[Update or remove](#update-or-remove).
+
+```bash
+cat >> ~/.bash_functions <<'EOF'
+
+# >>> agent backends >>>
 # Claude Code on MAG or the ALCF Inference Endpoints. Works in bash and zsh.
 #   use-amsc | use-alcf | use-default   switch this shell; then run plain `claude`
 #   claude-amsc | claude-alcf [args]    run Claude Code once on that backend; this shell is unchanged
@@ -144,23 +189,55 @@ claude-alcf() ( use-alcf && command claude "$@" )
 agent-backend() {
   echo "${AGENT_BACKEND:-default} (${ANTHROPIC_BASE_URL:-Anthropic, with your own login or API key})"
 }
+# <<< agent backends <<<
+EOF
 ```
 
-## 4. Load both files when a shell starts
+**Check:** `grep -c '>>> agent backends' ~/.bash_functions` prints `1`. If it prints `2`, you ran the block twice;
+see [Update or remove](#update-or-remove) to remove both and add one again.
 
-Add these lines to the end of `~/.bashrc` (bash) or `~/.zshrc` (zsh):
+## 4. Load both files
+
+Your shell reads its startup file only when it starts, so this step has two parts.
+
+**Load them in every new shell.** Pick your shell. The command adds a line for each file to your startup file,
+unless the line is already there:
+
+=== "bash"
+
+    ```bash
+    for f in bash_secrets bash_functions; do
+      grep -q "\. ~/\.$f" ~/.bashrc 2>/dev/null || echo "[ -f ~/.$f ] && . ~/.$f" >> ~/.bashrc
+    done
+    ```
+
+=== "zsh (macOS default)"
+
+    ```bash
+    for f in bash_secrets bash_functions; do
+      grep -q "\. ~/\.$f" ~/.zshrc 2>/dev/null || echo "[ -f ~/.$f ] && . ~/.$f" >> ~/.zshrc
+    done
+    ```
+
+The added lines look like `[ -f ~/.bash_functions ] && . ~/.bash_functions`: load the file if it exists. If your
+startup file already loads these files in some other way, the extra line is harmless.
+
+**Load them in the shell you have open now.** Without this, the commands exist only in new terminals:
 
 ```bash
-[ -f ~/.bash_secrets ] && . ~/.bash_secrets
-[ -f ~/.bash_functions ] && . ~/.bash_functions
+source ~/.bash_secrets
+source ~/.bash_functions
 ```
 
-Open a new terminal, or run `source ~/.bashrc` (or `source ~/.zshrc`).
+Opening a new terminal does the same thing. Do it again whenever you edit either file.
+
+**Check:** `agent-backend` prints `default (Anthropic, with your own login or API key)`, and
+`echo ${AMSC_TOKEN:+AMSC_TOKEN is set}` prints `AMSC_TOKEN is set`.
 
 !!! note "Login shells on clusters"
     When you connect with SSH you get a login shell. A bash login shell reads `~/.bash_profile` and not
-    `~/.bashrc`. Most sites source `~/.bashrc` from their default `~/.bash_profile`. If the commands are missing
-    after you log in, add `[ -f ~/.bashrc ] && . ~/.bashrc` to `~/.bash_profile`.
+    `~/.bashrc`. Most sites source `~/.bashrc` from their default `~/.bash_profile`. If `agent-backend` is
+    `command not found` after you log in, add `[ -f ~/.bashrc ] && . ~/.bashrc` to `~/.bash_profile`.
 
 ## 5. Use and switch
 
@@ -207,10 +284,24 @@ ALCF tokens last 48 hours. If a shell has been on ALCF that long, run `use-alcf`
       `ANTHROPIC_CUSTOM_HEADERS="X-AmSC-MAG-Provider: amazon"` before running `claude-amsc`; these functions do
       not touch it.
 
+## Update or remove
+
+The commands sit between the `# >>> agent backends >>>` and `# <<< agent backends <<<` lines in
+`~/.bash_functions`. This deletes that block and nothing else, and keeps a copy in `~/.bash_functions.bak`:
+
+```bash
+sed -i.bak '/^# >>> agent backends >>>$/,/^# <<< agent backends <<<$/d' ~/.bash_functions
+```
+
+- **To update:** run it, copy the current block from [step 3](#3-add-the-commands-to-bash_functions), then open
+  a new terminal.
+- **To remove:** run it, then delete the `AMSC_TOKEN` line from `~/.bash_secrets`. Delete the two lines that step 4
+  added to `~/.bashrc` or `~/.zshrc` if nothing else uses those files.
+
 ## On supercomputers (ALCF, OLCF, NERSC)
 
 The same steps work on the login nodes of Polaris and Aurora (ALCF), Frontier (OLCF), Perlmutter (NERSC) and
-other Linux clusters. Copy `~/.bash_functions` over, create `~/.bash_secrets` there, and repeat steps 1 and 4.
+other Linux clusters. Follow steps 1 to 4 on the cluster as on your own machine; on a login node, use the bash tab in step 4.
 
 - **Read the policy first.** See the warning at the top of this page. Facility policies differ, and project or
   allocation terms can add limits on top of them.

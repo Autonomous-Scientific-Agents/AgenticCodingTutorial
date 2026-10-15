@@ -19,8 +19,8 @@ Build with tests, make it fast, give it a face.
 ## Where to go next
 
 - [Getting started](getting-started.md): pick one tool and begin.
+- [Shell setup](shell-setup.md): switch Claude Code between MAG and ALCF from bash or zsh, on any Linux machine or supercomputer.
 - [Run in a container](container.md): every tool and editor in one image; the agent only sees your project.
-- [Shell setup (no container)](shell-setup.md): switch Claude Code between MAG and ALCF from bash or zsh, on any Linux machine or supercomputer.
 - [Best practices](best-practices.md): the habits and the evidence behind them.
 - [Tools cheat sheet](tools.md): the same move in each tool.
 - [Working with multiple agents](multi-agents.md): divide work, run sessions in parallel, integrate.

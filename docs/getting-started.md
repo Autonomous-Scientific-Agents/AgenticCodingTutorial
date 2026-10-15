@@ -320,4 +320,4 @@ background server would not see their settings. On your machine Codex keeps its 
 `codex-alcf` turn it off. On Windows, run the commands in [WSL](#windows-troubleshooting) or Git Bash.
 
 To switch Claude Code between MAG and ALCF with shell functions instead, or to set it up on a supercomputer,
-see [Shell setup without a container](shell-setup.md).
+see [Shell setup](shell-setup.md).
