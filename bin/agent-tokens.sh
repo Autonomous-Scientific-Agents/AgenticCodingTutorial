@@ -33,9 +33,11 @@ EOF
 }
 
 # HTTP status of a request with this token (000 when there is no answer). The header goes in on stdin,
-# so the token does not show up in the process list.
+# so the token does not show up in the process list. With a third argument the body is saved to that file.
 _http_status() {
-  printf 'Authorization: Bearer %s\n' "$1" | curl -s -o /dev/null -w '%{http_code}' -m 10 -H @- "$2" || true
+  local limit=10
+  [[ -n "${3:-}" ]] && limit=20
+  printf 'Authorization: Bearer %s\n' "$1" | curl -s -o "${3:-/dev/null}" -w '%{http_code}' -m "$limit" -H @- "$2" || true
 }
 
 # HTTP status of a MAG request with this PAT.

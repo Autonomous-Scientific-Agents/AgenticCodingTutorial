@@ -63,11 +63,6 @@ check() {
   return "$rc"
 }
 
-# Request with this token, body saved to a file; prints the HTTP status (000 when there is no answer).
-_http_get() {
-  printf 'Authorization: Bearer %s\n' "$1" | curl -s -o "$3" -w '%{http_code}' -m 20 -H @- "$2" || true
-}
-
 # MAG answers /v1/models in the OpenAI format: {"data": [{"id": ...}, ...]}.
 MAG_MODELS_PY='
 import json, sys
@@ -86,32 +81,41 @@ def load(name):
             return json.load(f)
     except (IOError, ValueError):
         return None
-rank = {"hot": 0, "starting": 1, "queued": 2, "offline": 3}
+rank = {"hot": 0, "starting": 1, "queued": 2, "offline": 3, "unknown": 4}
+def names(value):
+    items = value if isinstance(value, list) else str(value or "").split(",")
+    return [str(m).strip() for m in items if str(m).strip()]
 clusters = (load("endpoints.json") or {}).get("clusters") or {}
 for cluster in sorted(clusters):
     jobs = load("jobs-" + cluster + ".json")
+    known = isinstance(jobs, dict)
+    # Keyed by (framework, model); a job that names no framework counts for every framework.
     state = {}
     for key in ("running", "queued"):
-        for job in (jobs or {}).get(key) or []:
+        for job in (jobs if known else {}).get(key) or []:
             status = "queued"
             if key == "running":
-                ready = str(job.get("Model Status", "ready")).lower()
+                ready = str(job.get("Model Status") or "").lower()
                 status = "hot" if ready in ("ready", "running", "live") else "starting"
-            for model in str(job.get("Models", "")).split(","):
-                model = model.strip()
-                if model and rank[status] < rank[state.get(model, "offline")]:
-                    state[model] = status
-    note = "" if isinstance(jobs, dict) else ", live status unavailable"
+            framework = str(job.get("Framework") or "").lower()
+            for model in names(job.get("Models")):
+                if rank[status] < rank[state.get((framework, model), "offline")]:
+                    state[(framework, model)] = status
+    note = "" if known else ", live status unavailable"
     for framework, info in sorted((clusters[cluster].get("frameworks") or {}).items()):
-        models = sorted(set(info.get("models") or []), key=lambda m: (rank[state.get(m, "offline")], m.lower()))
-        hot = [m for m in models if state.get(m) == "hot"]
+        def status_of(m):
+            if not known:
+                return "unknown"
+            return min(state.get((framework.lower(), m), "offline"), state.get(("", m), "offline"), key=rank.get)
+        models = sorted(set(info.get("models") or []), key=lambda m: (rank[status_of(m)], m.lower()))
+        hot = [m for m in models if status_of(m) == "hot"]
         if hot_only:
             print("%s (%s): %d hot%s" % (cluster, framework, len(hot), note))
             models = hot
         else:
             print("%s (%s): %d model%s, %d hot%s" % (cluster, framework, len(models), "" if len(models) == 1 else "s", len(hot), note))
         for model in models:
-            print("  %-8s  %s" % (state.get(model, "offline"), model))
+            print("  %-8s  %s" % (status_of(model), model))
 '
 
 # List models. "all" covers MAG and ALCF; "hot" shows only the ALCF models that are loaded now.
@@ -126,7 +130,7 @@ models() {
   if [[ "$which" == all ]]; then
     if [[ -z "${AMSC_TOKEN:-}" ]]; then
       echo "MAG: no AMSC_TOKEN (the *-amsc commands ask for a PAT)"
-    elif status="$(_http_get "$AMSC_TOKEN" "$MAG_URL/v1/models" "$folder/mag.json")" && [[ "$status" == 200 ]]; then
+    elif status="$(_http_status "$AMSC_TOKEN" "$MAG_URL/v1/models" "$folder/mag.json")" && [[ "$status" == 200 ]]; then
       echo "MAG:"
       python3 -c "$MAG_MODELS_PY" < "$folder/mag.json" || rc=1
     else
@@ -135,25 +139,30 @@ models() {
   fi
   # Like the *-alcf commands: the token from the host while ALCF accepts it, else the alcf-tokens login.
   token="${ALCF_AI_TOKEN:-}"
-  [[ -n "$token" ]] && status="$(_http_get "$token" "$ALCF_URL/list-endpoints" "$folder/endpoints.json")"
+  [[ -n "$token" ]] && status="$(_http_status "$token" "$ALCF_URL/list-endpoints" "$folder/endpoints.json")"
   if [[ -z "$token" || "$status" =~ ^40[13]$ ]] && _alcf_get_token; then
     token="$ALCF_AI_TOKEN"
-    status="$(_http_get "$token" "$ALCF_URL/list-endpoints" "$folder/endpoints.json")"
+    status="$(_http_status "$token" "$ALCF_URL/list-endpoints" "$folder/endpoints.json")"
   fi
-  if [[ -z "$token" ]]; then
+  if [[ -z "$token" ]] && ! command -v alcf-tokens >/dev/null 2>&1; then
+    echo "ALCF: not set up (install alcf-tokens: uv tool install alcf-tokens)"
+    return 1
+  elif [[ -z "$token" ]]; then
     echo "ALCF: not logged in. Log in: alcf-tokens login inference"
     return 1
   elif [[ "$status" != 200 ]]; then
     report "ALCF" "$status" "Renew: alcf-tokens login inference"
     return 1
   fi
-  echo "ALCF (hot: loaded now; starting or queued: loading; offline: loads on the first request, which can take minutes):"
+  echo "ALCF (hot: loaded now; starting or queued: loading; offline: loads on the first request, which can take minutes; unknown: no live status):"
   for cluster in $(python3 -c 'import json, re, sys
 print(" ".join(c for c in json.load(sys.stdin).get("clusters") or {} if re.match(r"^[A-Za-z0-9_-]+$", c)))' \
       < "$folder/endpoints.json"); do
-    [[ "$(_http_get "$token" "$ALCF_URL/$cluster/jobs" "$folder/jobs-$cluster.json")" == 200 ]] ||
-      rm -f "$folder/jobs-$cluster.json"
+    # All clusters at once, so a slow service costs one timeout rather than one per cluster.
+    { [[ "$(_http_status "$token" "$ALCF_URL/$cluster/jobs" "$folder/jobs-$cluster.json")" == 200 ]] ||
+      rm -f "$folder/jobs-$cluster.json"; } &
   done
+  wait
   python3 -c "$ALCF_MODELS_PY" "$folder" "$which" || rc=1
   return "$rc"
 }

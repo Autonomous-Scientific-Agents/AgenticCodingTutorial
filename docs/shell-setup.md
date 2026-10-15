@@ -194,8 +194,11 @@ agent-backend() {
 
 # HTTP status for a token: 200 works, 401 or 403 rejected, 000 no answer.
 # The header goes in on stdin, so the token does not show up in the process list.
+# With a third argument the body is saved to that file.
 _agent_http() {
-  printf 'Authorization: Bearer %s\n' "$1" | curl -s -o /dev/null -w '%{http_code}' -m 10 -H @- "$2" || true
+  local limit=10
+  [ -n "${3:-}" ] && limit=20
+  printf 'Authorization: Bearer %s\n' "$1" | curl -s -o "${3:-/dev/null}" -w '%{http_code}' -m "$limit" -H @- "$2" || true
 }
 
 _agent_report() {
@@ -205,11 +208,6 @@ _agent_report() {
     000) echo "$1: no answer (network, proxy or service down)" ;;
     *) echo "$1: unexpected answer (HTTP $2)" ;;
   esac
-}
-
-# Request with a token; the body goes to a file and the HTTP status is printed.
-_agent_get() {
-  printf 'Authorization: Bearer %s\n' "$1" | curl -s -o "$3" -w '%{http_code}' -m 20 -H @- "$2" || true
 }
 
 # MAG answers /v1/models in the OpenAI format.
@@ -229,52 +227,63 @@ def load(name):
             return json.load(f)
     except (IOError, ValueError):
         return None
-rank = {"hot": 0, "starting": 1, "queued": 2, "offline": 3}
+rank = {"hot": 0, "starting": 1, "queued": 2, "offline": 3, "unknown": 4}
+def names(value):
+    items = value if isinstance(value, list) else str(value or "").split(",")
+    return [str(m).strip() for m in items if str(m).strip()]
 clusters = (load("endpoints.json") or {}).get("clusters") or {}
 for cluster in sorted(clusters):
     jobs = load("jobs-" + cluster + ".json")
+    known = isinstance(jobs, dict)
+    # Keyed by (framework, model); a job that names no framework counts for every framework.
     state = {}
     for key in ("running", "queued"):
-        for job in (jobs or {}).get(key) or []:
+        for job in (jobs if known else {}).get(key) or []:
             status = "queued"
             if key == "running":
-                ready = str(job.get("Model Status", "ready")).lower()
+                ready = str(job.get("Model Status") or "").lower()
                 status = "hot" if ready in ("ready", "running", "live") else "starting"
-            for model in str(job.get("Models", "")).split(","):
-                model = model.strip()
-                if model and rank[status] < rank[state.get(model, "offline")]:
-                    state[model] = status
-    note = "" if isinstance(jobs, dict) else ", live status unavailable"
+            framework = str(job.get("Framework") or "").lower()
+            for model in names(job.get("Models")):
+                if rank[status] < rank[state.get((framework, model), "offline")]:
+                    state[(framework, model)] = status
+    note = "" if known else ", live status unavailable"
     for framework, info in sorted((clusters[cluster].get("frameworks") or {}).items()):
-        models = sorted(set(info.get("models") or []), key=lambda m: (rank[state.get(m, "offline")], m.lower()))
-        hot = [m for m in models if state.get(m) == "hot"]
+        def status_of(m):
+            if not known:
+                return "unknown"
+            return min(state.get((framework.lower(), m), "offline"), state.get(("", m), "offline"), key=rank.get)
+        models = sorted(set(info.get("models") or []), key=lambda m: (rank[status_of(m)], m.lower()))
+        hot = [m for m in models if status_of(m) == "hot"]
         if hot_only:
             print("%s (%s): %d hot%s" % (cluster, framework, len(hot), note))
             models = hot
         else:
             print("%s (%s): %d model%s, %d hot%s" % (cluster, framework, len(models), "" if len(models) == 1 else "s", len(hot), note))
         for model in models:
-            print("  %-8s  %s" % (state.get(model, "offline"), model))
+            print("  %-8s  %s" % (status_of(model), model))
 '
 
 # $1 is "all" (MAG and ALCF) or "hot" (only ALCF models that are loaded now).
-_agent_models() {
-  local folder status token cluster
+# The ( ) body runs in a subshell, so the trap removes the temporary folder even after Ctrl-C.
+_agent_models() (
+  local folder code token cluster
   if ! command -v python3 >/dev/null 2>&1; then
     echo "agent-status: listing models needs python3" >&2
     return 1
   fi
   folder="$(mktemp -d)" || return 1
+  trap 'rm -rf "$folder"' EXIT
   if [ "$1" = all ]; then
     if [ -z "${AMSC_TOKEN:-}" ]; then
       echo "MAG: no AMSC_TOKEN. Add it to ~/.bash_secrets"
     else
-      status="$(_agent_get "$AMSC_TOKEN" "$_MAG_URL/v1/models" "$folder/mag.json")"
-      if [ "$status" = 200 ]; then
+      code="$(_agent_http "$AMSC_TOKEN" "$_MAG_URL/v1/models" "$folder/mag.json")"
+      if [ "$code" = 200 ]; then
         echo "MAG:"
         python3 -c "$_AGENT_MAG_PY" < "$folder/mag.json"
       else
-        _agent_report MAG "$status" "read -rs AMSC_TOKEN && export AMSC_TOKEN, then update ~/.bash_secrets"
+        _agent_report MAG "$code" "read -rs AMSC_TOKEN && export AMSC_TOKEN, then update ~/.bash_secrets"
       fi
     fi
   fi
@@ -283,23 +292,23 @@ _agent_models() {
   elif ! token="$(alcf-tokens get-token inference 2>/dev/null)" || [ -z "$token" ]; then
     echo "ALCF: not logged in. Log in: alcf-tokens login inference"
   else
-    status="$(_agent_get "$token" "$_ALCF_API/list-endpoints" "$folder/endpoints.json")"
-    if [ "$status" != 200 ]; then
-      _agent_report ALCF "$status" "alcf-tokens login inference"
+    code="$(_agent_http "$token" "$_ALCF_API/list-endpoints" "$folder/endpoints.json")"
+    if [ "$code" != 200 ]; then
+      _agent_report ALCF "$code" "alcf-tokens login inference"
     else
-      echo "ALCF (hot: loaded now; starting or queued: loading; offline: loads on the first request, which can take minutes):"
+      echo "ALCF (hot: loaded now; starting or queued: loading; offline: loads on the first request, which can take minutes; unknown: no live status):"
       for cluster in $(python3 -c 'import json, re, sys
 print(" ".join(c for c in json.load(sys.stdin).get("clusters") or {} if re.match(r"^[A-Za-z0-9_-]+$", c)))' \
           < "$folder/endpoints.json"); do
-        [ "$(_agent_get "$token" "$_ALCF_API/$cluster/jobs" "$folder/jobs-$cluster.json")" = 200 ] ||
-          rm -f "$folder/jobs-$cluster.json"
+        # All clusters at once, so a slow service costs one timeout rather than one per cluster.
+        { [ "$(_agent_http "$token" "$_ALCF_API/$cluster/jobs" "$folder/jobs-$cluster.json")" = 200 ] ||
+          rm -f "$folder/jobs-$cluster.json"; } &
       done
+      wait
       python3 -c "$_AGENT_ALCF_PY" "$folder" "$1"
     fi
   fi
-  rm -f "$folder"/*.json
-  rmdir "$folder"
-}
+)
 
 agent-status() {
   local token
