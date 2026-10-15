@@ -27,6 +27,7 @@ nav:
   - Home: index.md
   - Getting started: getting-started.md
   - Run in a container: container.md
+  - Shell setup (no container): shell-setup.md
   - Best practices: best-practices.md
   - Tools cheat sheet: tools.md
   - Working with multiple agents: multi-agents.md
