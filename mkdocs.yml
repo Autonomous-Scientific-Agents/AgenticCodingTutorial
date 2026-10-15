@@ -32,7 +32,9 @@ nav:
   - Tools cheat sheet: tools.md
   - Working with multiple agents: multi-agents.md
   - Agent tracing (chemistry example): agent-tracing.md
-  - Skills and MCP: skills-mcp.md
+  - Skills: skills.md
+  - MCP servers: mcp.md
+  - Hooks: hooks.md
   - Models and budget: models.md
   - Custom endpoints: endpoints.md
   - Hands-on lab: lab.md
