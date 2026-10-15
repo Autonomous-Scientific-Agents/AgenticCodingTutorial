@@ -219,6 +219,7 @@ container, ask again. Set it on the host as above to reuse it across launches un
 
 ```bash
 agent-status --check          # asks MAG and ALCF whether your tokens work; never prints them
+agent-status --models         # lists the models MAG and ALCF offer you
 ```
 
 When MAG rejects the PAT, the `*-amsc` commands ask for a new one for that run. To use a new PAT for the rest of
@@ -311,6 +312,10 @@ refresh on their own; ALCF asks you to log in again every 30 days.
     The run script then calls `alcf-tokens get-token inference` each time it starts and passes a fresh token
     as `ALCF_AI_TOKEN`. The commands use it while ALCF accepts it. After 48 hours they fall back to the
     in-container login, or you can restart the container to get a fresh one.
+
+**Which models are hot.** An ALCF model answers right away only while it is loaded ("hot"). Otherwise the
+first request queues it, which can take minutes. `agent-status --hot` lists the hot models on each cluster;
+`agent-status --models` lists them all, with their state.
 
 **When a token expires.** `agent-status --check` shows whether the ALCF token works. The commands get fresh
 tokens on their own, so you only need to log in again (`alcf-tokens login inference`) when ALCF asks, every

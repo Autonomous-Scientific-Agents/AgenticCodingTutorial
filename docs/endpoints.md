@@ -265,7 +265,7 @@ Three active clusters. Pick based on your agent and model needs:
 | **Metis** | `https://inference-api.alcf.anl.gov/resource_server/metis/api/v1` | Chat Completions, Responses | SambaNova hardware; tool-calling has known issues |
 | **Minerva** | `https://inference-api.alcf.anl.gov/resource_server/minerva/api/v1` | Chat Completions, Responses, Anthropic Messages | Direct API endpoint; ALCF's choice for Claude Code and Codex (`inkling-bf16`, `nemotron-3-ultra`) |
 
-See [Available Models](https://docs.alcf.anl.gov/services/inference-endpoints/models/) for the current model list per cluster. Do not hard-code model names — fetch from `/models` or use `alcf-ai ls-models <cluster>`.
+See [Available Models](https://docs.alcf.anl.gov/services/inference-endpoints/models/) for the current model list per cluster. Do not hard-code model names — fetch from `/models` or use `alcf-ai ls-models <cluster>`. To see which models are loaded right now, run `agent-status --hot` (from this tutorial's [shortcut commands](getting-started.md#shortcut-commands-for-mag-and-alcf)) or `alcf-ai ls-jobs <cluster>`.
 
 ### Manual config: OpenCode
 
@@ -376,7 +376,7 @@ The token expires after 48 hours; paste a new one when requests start failing. N
 
 - **Tool calling broken on Metis**: SambaNova's tool-call sanitization has a known issue. Use Sophia or Minerva for tool calling.
 - **Streaming off for Responses on Sophia**: Codex on Sophia cannot stream with the Responses API. Use Chat Completions or switch to Minerva.
-- **Connection timeout**: the model may still be loading. Check what is running with `alcf-ai ls-jobs <cluster>`.
+- **Connection timeout**: the model may still be loading. Check what is running with `agent-status --hot` or `alcf-ai ls-jobs <cluster>`.
 - **Permission denied after 30 days**: Re-authenticate: `alcf-tokens login inference` or `alcf-tokens clear-tokens` then `alcf-tokens login`.
 
 See [ALCF Inference Troubleshooting](https://docs.alcf.anl.gov/services/inference-endpoints/#troubleshooting) for more.

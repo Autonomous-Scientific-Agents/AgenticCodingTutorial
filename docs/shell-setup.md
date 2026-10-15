@@ -121,10 +121,11 @@ cat >> ~/.bash_functions <<'EOF'
 #   claude-amsc | claude-alcf [args]    run Claude Code once on that backend; this shell is unchanged
 #   agent-backend                       show which backend this shell uses
 #   agent-status --check                ask MAG and ALCF whether your tokens work
+#   agent-status --models | --hot       list MAG and ALCF models | only the ALCF models loaded now
 
 _MAG_URL=https://mag.genesis.americansciencecloud.org
 _ALCF_URL=https://inference-api.alcf.anl.gov/resource_server/minerva/api   # Claude Code adds /v1/messages
-_ALCF_CHECK_URL=https://inference-api.alcf.anl.gov/resource_server/list-endpoints
+_ALCF_API=https://inference-api.alcf.anl.gov/resource_server
 
 use-default() {
   unset ANTHROPIC_AUTH_TOKEN ANTHROPIC_BASE_URL ANTHROPIC_MODEL \
@@ -193,8 +194,11 @@ agent-backend() {
 
 # HTTP status for a token: 200 works, 401 or 403 rejected, 000 no answer.
 # The header goes in on stdin, so the token does not show up in the process list.
+# With a third argument the body is saved to that file.
 _agent_http() {
-  printf 'Authorization: Bearer %s\n' "$1" | curl -s -o /dev/null -w '%{http_code}' -m 10 -H @- "$2" || true
+  local limit=10
+  [ -n "${3:-}" ] && limit=20
+  printf 'Authorization: Bearer %s\n' "$1" | curl -s -o "${3:-/dev/null}" -w '%{http_code}' -m "$limit" -H @- "$2" || true
 }
 
 _agent_report() {
@@ -204,29 +208,149 @@ _agent_report() {
     000) echo "$1: no answer (network, proxy or service down)" ;;
     *) echo "$1: unexpected answer (HTTP $2)" ;;
   esac
+  [ "$2" = 200 ]
 }
 
+# MAG answers /v1/models in the OpenAI format.
+_AGENT_MAG_PY='
+import json, sys
+try:
+    models = sorted(m["id"] for m in json.load(sys.stdin).get("data") or [])
+except (ValueError, KeyError, TypeError, AttributeError):
+    sys.exit("MAG: unexpected answer to /v1/models (not a model list)")
+print("MAG:")
+for model in models:
+    print("  " + model)
+'
+
+# ALCF: list-endpoints names the models; <cluster>/jobs says which are running (hot or starting) or queued.
+_AGENT_ALCF_PY='
+import json, os, re, sys
+folder, mode = sys.argv[1], sys.argv[2]
+def load(name):
+    try:
+        with open(os.path.join(folder, name)) as f:
+            return json.load(f)
+    except (IOError, ValueError):
+        return None
+rank = {"hot": 0, "starting": 1, "queued": 2, "offline": 3, "unknown": 4}
+def names(value):
+    items = value if isinstance(value, list) else str(value or "").split(",")
+    return [str(m).strip() for m in items if str(m).strip()]
+def table(value):
+    return value if isinstance(value, dict) else {}
+endpoints = load("endpoints.json")
+clusters = endpoints.get("clusters") if isinstance(endpoints, dict) else None
+# "clusters" prints the names for the shell to fetch <cluster>/jobs; it stays quiet, the listing reports errors.
+if mode == "clusters":
+    print(" ".join(c for c in table(clusters) if re.match(r"^[A-Za-z0-9_-]+$", c)))
+    sys.exit()
+if not isinstance(clusters, dict):
+    sys.exit("ALCF: unexpected answer to list-endpoints (no cluster list)")
+print("ALCF (hot: loaded now; starting or queued: loading; offline: loads on the first request, which can take minutes; unknown: no live status):")
+for cluster in sorted(clusters):
+    jobs = load("jobs-" + cluster + ".json")
+    known = isinstance(jobs, dict)
+    # Keyed by (framework, model); a job that names no framework counts for every framework.
+    state = {}
+    for key in ("running", "queued"):
+        for job in (jobs if known else {}).get(key) or []:
+            if not isinstance(job, dict):
+                continue
+            status = "queued"
+            if key == "running":
+                ready = str(job.get("Model Status") or "").lower()
+                status = "hot" if ready in ("ready", "running", "live") else "starting"
+            framework = str(job.get("Framework") or "").lower()
+            for model in names(job.get("Models")):
+                if rank[status] < rank[state.get((framework, model), "offline")]:
+                    state[(framework, model)] = status
+    note = "" if known else ", live status unavailable"
+    for framework, info in sorted(table(table(clusters[cluster]).get("frameworks")).items()):
+        def status_of(m):
+            if not known:
+                return "unknown"
+            return min(state.get((framework.lower(), m), "offline"), state.get(("", m), "offline"), key=rank.get)
+        models = sorted(set(table(info).get("models") or []), key=lambda m: (rank[status_of(m)], m.lower()))
+        hot = [m for m in models if status_of(m) == "hot"]
+        if mode == "hot":
+            print("%s (%s): %d hot%s" % (cluster, framework, len(hot), note))
+            models = hot
+        else:
+            print("%s (%s): %d model%s, %d hot%s" % (cluster, framework, len(models), "" if len(models) == 1 else "s", len(hot), note))
+        for model in models:
+            print("  %-8s  %s" % (status_of(model), model))
+'
+
+# $1 is "all" (MAG and ALCF) or "hot" (only ALCF models that are loaded now).
+# The ( ) body runs in a subshell, so the trap removes the temporary folder even after Ctrl-C.
+_agent_models() (
+  local folder code token cluster rc=0
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "agent-status: listing models needs python3" >&2
+    return 1
+  fi
+  folder="$(mktemp -d)" || return 1
+  trap 'rm -rf "$folder"' EXIT
+  if [ "$1" = all ]; then
+    if [ -z "${AMSC_TOKEN:-}" ]; then
+      echo "MAG: no AMSC_TOKEN. Add it to ~/.bash_secrets"
+    else
+      code="$(_agent_http "$AMSC_TOKEN" "$_MAG_URL/v1/models" "$folder/mag.json")"
+      if [ "$code" = 200 ]; then
+        python3 -c "$_AGENT_MAG_PY" < "$folder/mag.json" || rc=1
+      else
+        _agent_report MAG "$code" "read -rs AMSC_TOKEN && export AMSC_TOKEN, then update ~/.bash_secrets" || rc=1
+      fi
+    fi
+  fi
+  if ! command -v alcf-tokens >/dev/null 2>&1; then
+    echo "ALCF: alcf-tokens not installed (uv tool install alcf-tokens)"
+    rc=1
+  elif ! token="$(alcf-tokens get-token inference 2>/dev/null)" || [ -z "$token" ]; then
+    echo "ALCF: not logged in. Log in: alcf-tokens login inference"
+    rc=1
+  else
+    code="$(_agent_http "$token" "$_ALCF_API/list-endpoints" "$folder/endpoints.json")"
+    if [ "$code" != 200 ]; then
+      _agent_report ALCF "$code" "alcf-tokens login inference" || rc=1
+    else
+      for cluster in $(python3 -c "$_AGENT_ALCF_PY" "$folder" clusters); do
+        # All clusters at once, so a slow service costs one timeout rather than one per cluster.
+        { [ "$(_agent_http "$token" "$_ALCF_API/$cluster/jobs" "$folder/jobs-$cluster.json")" = 200 ] ||
+          rm -f "$folder/jobs-$cluster.json"; } &
+      done
+      wait
+      python3 -c "$_AGENT_ALCF_PY" "$folder" "$1" || rc=1
+    fi
+  fi
+  return "$rc"
+)
+
 agent-status() {
-  local token
+  local token rc=0
   case "${1:-}" in
     "")
       agent-backend
-      echo "Test your tokens: agent-status --check" ;;
+      echo "Test your tokens: agent-status --check. List models: agent-status --models" ;;
     --check)
       if [ -n "${AMSC_TOKEN:-}" ]; then
         _agent_report MAG "$(_agent_http "$AMSC_TOKEN" "$_MAG_URL/v1/models")" \
-          "read -rs AMSC_TOKEN && export AMSC_TOKEN, then update ~/.bash_secrets"
+          "read -rs AMSC_TOKEN && export AMSC_TOKEN, then update ~/.bash_secrets" || rc=1
       else
         echo "MAG: no AMSC_TOKEN. Add it to ~/.bash_secrets"
       fi
       if ! command -v alcf-tokens >/dev/null 2>&1; then
         echo "ALCF: alcf-tokens not installed (uv tool install alcf-tokens)"
       elif token="$(alcf-tokens get-token inference 2>/dev/null)" && [ -n "$token" ]; then
-        _agent_report ALCF "$(_agent_http "$token" "$_ALCF_CHECK_URL")" "alcf-tokens login inference"
+        _agent_report ALCF "$(_agent_http "$token" "$_ALCF_API/list-endpoints")" "alcf-tokens login inference" || rc=1
       else
         echo "ALCF: not logged in. Log in: alcf-tokens login inference"
-      fi ;;
-    *) echo "usage: agent-status [--check]" >&2; return 2 ;;
+      fi
+      return "$rc" ;;
+    --models) _agent_models all ;;
+    --hot) _agent_models hot ;;
+    *) echo "usage: agent-status [--check | --models | --hot]" >&2; return 2 ;;
   esac
 }
 # <<< agent backends <<<
@@ -309,6 +433,28 @@ To see what a backend sets, run `type claude-amsc` or
     your project allocation. Watch your spend on the [MAG dashboard](https://docs.amsc.energy.gov/mag-dashboard),
     and use cheaper models for routine work (see AmSC's
     [Model Recommendations](https://docs.amsc.energy.gov/model-selection)).
+
+### Which models you can use
+
+```bash
+agent-status --models     # MAG and ALCF models
+agent-status --hot        # only the ALCF models that are loaded now
+```
+
+```text
+ALCF (hot: loaded now; starting or queued: loading; offline: loads on the first request, which can take minutes; unknown: no live status):
+minerva (api): 3 models, 1 hot
+  hot       inkling-bf16
+  offline   gpt-oss-120b
+  offline   nemotron-3-ultra
+sophia (vllm): ...
+```
+
+ALCF serves a model from its own nodes only while it is loaded. A model marked `offline` still works, but the first
+request starts it and can wait minutes in the queue. Pick a hot one with `ALCF_CLAUDE_MODEL=<model> claude-alcf`.
+`claude-alcf` and `use-alcf` use Minerva, so pick from its list. For MAG, pass a listed name to `--model`.
+These commands need `python3`; the raw data is also available from `alcf-ai ls-endpoints` and
+`alcf-ai ls-jobs <cluster>`.
 
 ### When a token expires
 
