@@ -41,7 +41,7 @@ if [[ "${1:-}" == "build" ]]; then
 fi
 
 args=(
-  --rm -it
+  --rm -i
   -v "$PWD":/workspace
   -v ai-agents-claude:/home/dev/.claude
   -v ai-agents-codex:/home/dev/.codex
@@ -51,6 +51,8 @@ args=(
   -v ai-agents-gh:/home/dev/.config/gh
   -v ai-agents-globus:/home/dev/.globus
 )
+# Keep stdin open for pipes and scripts; allocate a terminal only for an interactive session.
+[[ -t 0 && -t 1 ]] && args+=(-t)
 
 # Commit as you: use your git name and email unless GIT_AUTHOR_*/GIT_COMMITTER_* are already set.
 if command -v git >/dev/null 2>&1; then

@@ -5,10 +5,11 @@ Claude Code, Codex CLI and OpenCode, plus [uv](https://docs.astral.sh/uv/), git,
 [GitHub CLI](https://cli.github.com/) (`gh`), Python 3, the terminal editors vim, emacs and nano, and
 VS Code in the browser ([code-server](https://github.com/coder/code-server)).
 
-!!! success "Why a container is a safe place for an agent"
-    The agent can only see the project folder you mount into it. It cannot read your home directory,
-    SSH keys, or other projects, and anything it installs disappears when the container stops.
-    Your work in the mounted folder is kept, so commit it with git as usual.
+!!! success "What the container isolates"
+    The run scripts mount your project and named volumes for agent settings and logins. Your host home
+    directory, SSH keys, and other projects are not mounted. The agent can change the mounted project,
+    use supplied credentials, and access the network. Files in the project and named volumes survive
+    container removal; changes elsewhere in the container are discarded. Commit your work with git as usual.
     Inside a container it is reasonable to allow more autonomy (fewer approval prompts) than on your laptop
     or on a shared allocation.
 
@@ -109,7 +110,7 @@ Prefer to build it yourself? Clone this repository and run `./run.sh build` (Win
 ## 3. Start it in your project
 
 Run the script **from the project folder** you want the agent to work on. That folder appears as
-`/workspace` inside the container, and nothing else from your machine does.
+`/workspace` inside the container. Agent settings and logins are kept in separate named volumes.
 
 === "macOS / Linux"
 
@@ -129,6 +130,25 @@ Run the script **from the project folder** you want the agent to work on. That f
 
 You can also start one tool directly: `/path/to/run.sh claude`.
 
+For scripts and pipelines, pass a command that can run without an interactive prompt. Both launchers
+keep standard input open and allocate a terminal only when input and output are connected to a terminal:
+
+=== "macOS / Linux"
+
+    ```bash
+    printf 'hello\n' | /path/to/run.sh cat
+    /path/to/run.sh python3 --version > python-version.txt
+    ```
+
+=== "Windows"
+
+    ```powershell
+    'hello' | C:\path\to\run.ps1 cat
+    C:\path\to\run.ps1 python3 --version | Set-Content python-version.txt
+    ```
+
+Set the required model token in the environment before running an agent without a terminal.
+
 ### Editors
 
 | Editor | How |
@@ -145,8 +165,9 @@ container.
 The `*-amsc` and `*-alcf` commands below also work without the container; see
 [Shortcut commands for MAG and ALCF](getting-started.md#shortcut-commands-for-mag-and-alcf).
 
-Keys and tokens stay on your machine: you set them as environment variables on the host, and the run script
-copies them into the container each time it starts. They are never written into the image or the saved volumes.
+Set keys and tokens as environment variables on the host; the run scripts pass them into the container
+without writing their values into the image or a configuration file. Tools can also save credentials in
+their named volumes when you log in, as described below.
 The script passes these variables when they are set:
 
 - any variable whose name starts with `AMSC_` (MAG) or `ALCF_` (ALCF)
@@ -179,7 +200,7 @@ a personal access token (PAT).
     Add this line to `~/.zshrc` (macOS) or `~/.bashrc` (Linux), then open a new terminal:
 
     ```bash
-    export AMSC_TOKEN=<your PAT>
+    export AMSC_TOKEN='<your PAT>'
     ```
 
 === "Windows"
@@ -194,8 +215,8 @@ PATs are short-lived. When MAG answers `401 Unauthorized`, generate a new PAT on
 [myAmSC](https://my.amsc.energy.gov/dashboard), replace the value, open a new terminal and restart the container.
 
 No `AMSC_TOKEN` yet, or it expired? Run `claude-amsc` anyway: it explains where to get a PAT, asks you to paste
-it (hidden), checks it with MAG, and uses it until the container stops. Nothing is saved, so set it on the host
-as above to skip this next time.
+it (hidden), checks it with MAG, and uses it for that agent run only. Later launches, including in the same
+container, ask again. Set it on the host as above to reuse it across launches until it expires.
 
 **2. Start an agent on MAG.** The container has one command per tool. Each uses the settings MAG documents for
 [Claude Code](https://docs.amsc.energy.gov/client-applications/coding-tools/claude-code),
@@ -333,7 +354,7 @@ gh auth status
 **Commits carry your name.** The run script reads `user.name` and `user.email` from your git configuration on the
 host and passes them in, so you do not need to configure git inside the container.
 
-## Tips## Tips
+## Tips
 
 - Commit before you prompt: the container protects your machine, git protects your project.
 - Get the newest image with `podman pull ghcr.io/autonomous-scientific-agents/agentic-coding:latest`; the run
