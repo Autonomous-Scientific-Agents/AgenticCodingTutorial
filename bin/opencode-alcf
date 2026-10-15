@@ -5,7 +5,7 @@
 # The provider is passed in OPENCODE_CONFIG_CONTENT, so your opencode.json files are not changed.
 #
 #   opencode-alcf                                start OpenCode (ALCF_OPENCODE_MODEL or inkling-bf16)
-#   opencode-alcf -m alcf/nemotron-3-ultra       any opencode option works; /models lists the ALCF models
+#   opencode-alcf run -m alcf/nemotron-3-ultra "..."   one message; in the app, /models lists the ALCF models
 set -euo pipefail
 source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
 
@@ -28,4 +28,4 @@ export OPENCODE_CONFIG_CONTENT='{
   }
 }'
 
-exec opencode "$@"
+exec_opencode "$@"

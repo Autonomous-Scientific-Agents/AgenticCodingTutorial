@@ -5,7 +5,7 @@
 # The provider is passed in OPENCODE_CONFIG_CONTENT, so your opencode.json files are not changed.
 #
 #   opencode-amsc                          start OpenCode (AMSC_OPENCODE_MODEL or claude-sonnet)
-#   opencode-amsc -m amsc-mag/gpt-6-luna   any opencode option works; /models lists the MAG models
+#   opencode-amsc run -m amsc-mag/gpt-6-luna "..."   one message; in the app, /models lists the MAG models
 set -euo pipefail
 source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
 
@@ -32,4 +32,4 @@ export OPENCODE_CONFIG_CONTENT='{
   }
 }'
 
-exec opencode "$@"
+exec_opencode "$@"

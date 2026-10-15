@@ -207,7 +207,7 @@ configuration files alone. Plain `claude`, `codex` and `opencode` keep your norm
 |---|---|---|
 | `claude-amsc` | Claude Code's default | `claude-amsc --model claude-haiku` |
 | `codex-amsc` | `gpt-6-luna` | `codex-amsc -m gpt-6.1-sol`, or set `AMSC_CODEX_MODEL` |
-| `opencode-amsc` | `claude-sonnet` | `/models` in OpenCode, `-m amsc-mag/gpt-6-luna`, or set `AMSC_OPENCODE_MODEL` |
+| `opencode-amsc` | `claude-sonnet` | `/models` in OpenCode, or set `AMSC_OPENCODE_MODEL` |
 
 ```bash
 cd my-project
@@ -253,7 +253,7 @@ the current endpoints and models.
 |---|---|---|
 | `claude-alcf` | `inkling-bf16` | set `ALCF_CLAUDE_MODEL` |
 | `codex-alcf` | `inkling-bf16` | `codex-alcf -m nemotron-3-ultra`, or set `ALCF_CODEX_MODEL` |
-| `opencode-alcf` | `inkling-bf16` | `/models` in OpenCode, `-m alcf/nemotron-3-ultra`, or set `ALCF_OPENCODE_MODEL` |
+| `opencode-alcf` | `inkling-bf16` | `/models` in OpenCode, or set `ALCF_OPENCODE_MODEL` |
 
 Other endpoints: set `ALCF_ANTHROPIC_BASE_URL` (Claude Code) or `ALCF_OPENAI_BASE_URL` (Codex, OpenCode).
 Claude Code and Codex warn that they do not know these models and fall back to default settings; that is

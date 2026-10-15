@@ -312,5 +312,6 @@ opencode-amsc                     # OpenCode on MAG; /models lists the MAG model
 ```
 
 The [container page](container.md#4-model-access-and-logins) lists the default models and the variables that
-change them. On your machine Codex keeps its own sandbox; only inside the container do `codex-amsc` and
+change them. With OpenCode 2 the `opencode-*` commands start their own private OpenCode server, because the shared
+background server would not see their settings. On your machine Codex keeps its own sandbox; only inside the container do `codex-amsc` and
 `codex-alcf` turn it off. On Windows, run the commands in [WSL](#windows-troubleshooting) or Git Bash.

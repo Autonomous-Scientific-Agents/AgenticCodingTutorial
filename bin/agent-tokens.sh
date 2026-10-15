@@ -3,6 +3,7 @@
 #
 #   require_amsc_token   AMSC_TOKEN (MAG PAT) from the host, or ask for one in a terminal (this session only)
 #   require_alcf_token   ALCF_AI_TOKEN from the host, or from alcf-tokens, logging in first in a terminal
+#   exec_opencode        start opencode so that it reads OPENCODE_CONFIG_CONTENT
 
 MAG_URL=https://mag.genesis.americansciencecloud.org
 ALCF_URL=https://inference-api.alcf.anl.gov/resource_server
@@ -106,4 +107,19 @@ EOF
     fi
   fi
   export ALCF_AI_TOKEN
+}
+
+# OpenCode 2 runs a shared background service that never sees OPENCODE_CONFIG_CONTENT; --standalone starts
+# a private one that does. The flag goes after the subcommand. OpenCode 1 reads the variable directly.
+exec_opencode() {
+  local major
+  major="$(opencode --version 2>/dev/null | sed -E 's/^[^0-9]*([0-9]+).*/\1/')"
+  if [[ "$major" =~ ^[0-9]+$ ]] && (( major >= 2 )); then
+    case "${1:-}" in
+      run|mini|models|acp) exec opencode "$1" --standalone "${@:2}" ;;
+      ""|-*) exec opencode --standalone "$@" ;;
+      *) [[ -d "$1" ]] && exec opencode --standalone "$@" ;;
+    esac
+  fi
+  exec opencode "$@"
 }
