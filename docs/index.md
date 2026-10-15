@@ -19,11 +19,14 @@ Build with tests, make it fast, give it a face.
 ## Where to go next
 
 - [Getting started](getting-started.md): pick one tool and begin.
+- [Shell setup](shell-setup.md): switch Claude Code between MAG and ALCF from bash or zsh, on any Linux machine or supercomputer.
 - [Run in a container](container.md): every tool and editor in one image, with your project and saved settings mounted.
 - [Best practices](best-practices.md): the habits and the evidence behind them.
 - [Tools cheat sheet](tools.md): the same move in each tool.
 - [Working with multiple agents](multi-agents.md): divide work, run sessions in parallel, integrate.
-- [Skills and MCP](skills-mcp.md): extend the agent with procedures and tools; where to find good ones.
+- [Skills](skills.md): procedures the agent follows when a task calls for them; where to find good ones, including Genesis Skills.
+- [MCP servers](mcp.md): connect the agent to tools and data, such as current docs, a browser or GitHub.
+- [Hooks](hooks.md): commands that always run at set points, such as formatting after every edit.
 - [Models and budget](models.md): how to choose, and how to see what you spend.
 - [Custom endpoints](endpoints.md): argo-proxy, argo-shim and ALCF Inference Endpoints.
 - [Hands-on demo](lab.md): demo repositories.
