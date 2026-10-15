@@ -43,7 +43,7 @@ The [hooks reference](https://code.claude.com/docs/en/hooks) lists every event a
 sends the command's standard error back to the agent as the reason, so it can adjust. Any other code is reported as
 a hook error and the action goes ahead.
 
-### Example: format every edited Python file
+### Example: format Python files after Edit and Write
 
 Add to `.claude/settings.json` (needs `jq` and [ruff](https://docs.astral.sh/ruff/)):
 
@@ -64,6 +64,10 @@ Add to `.claude/settings.json` (needs `jq` and [ruff](https://docs.astral.sh/ruf
   }
 }
 ```
+
+The matcher covers only Claude Code's Edit and Write tools. A file the agent changes through a shell
+command, such as `sed -i` or a script, does not trigger this hook. To catch those too, also run
+`ruff format .` (or a check over `git diff --name-only`) from a `Stop` hook.
 
 ### Example: block `rm -rf`
 
