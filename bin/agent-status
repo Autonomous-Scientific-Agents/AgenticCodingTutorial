@@ -3,6 +3,8 @@
 #
 #   agent-status           one line from variables and files only, so it adds no delay
 #   agent-status --check   ask MAG and ALCF whether your tokens work (never prints them)
+#   agent-status --models  list the models MAG and ALCF offer you; ALCF models show whether they are hot
+#   agent-status --hot     list only the ALCF models that are loaded and answer right away
 set -uo pipefail
 source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
 
@@ -61,9 +63,106 @@ check() {
   return "$rc"
 }
 
+# Request with this token, body saved to a file; prints the HTTP status (000 when there is no answer).
+_http_get() {
+  printf 'Authorization: Bearer %s\n' "$1" | curl -s -o "$3" -w '%{http_code}' -m 20 -H @- "$2" || true
+}
+
+# MAG answers /v1/models in the OpenAI format: {"data": [{"id": ...}, ...]}.
+MAG_MODELS_PY='
+import json, sys
+for model in sorted(m["id"] for m in json.load(sys.stdin).get("data") or []):
+    print("  " + model)
+'
+
+# ALCF: list-endpoints names the clusters, frameworks and models; <cluster>/jobs says which models are running
+# (hot, or still starting) or queued. Offline models load when someone sends a request, which can take minutes.
+ALCF_MODELS_PY='
+import json, os, sys
+folder, hot_only = sys.argv[1], sys.argv[2] == "hot"
+def load(name):
+    try:
+        with open(os.path.join(folder, name)) as f:
+            return json.load(f)
+    except (IOError, ValueError):
+        return None
+rank = {"hot": 0, "starting": 1, "queued": 2, "offline": 3}
+clusters = (load("endpoints.json") or {}).get("clusters") or {}
+for cluster in sorted(clusters):
+    jobs = load("jobs-" + cluster + ".json")
+    state = {}
+    for key in ("running", "queued"):
+        for job in (jobs or {}).get(key) or []:
+            status = "queued"
+            if key == "running":
+                ready = str(job.get("Model Status", "ready")).lower()
+                status = "hot" if ready in ("ready", "running", "live") else "starting"
+            for model in str(job.get("Models", "")).split(","):
+                model = model.strip()
+                if model and rank[status] < rank[state.get(model, "offline")]:
+                    state[model] = status
+    note = "" if isinstance(jobs, dict) else ", live status unavailable"
+    for framework, info in sorted((clusters[cluster].get("frameworks") or {}).items()):
+        models = sorted(set(info.get("models") or []), key=lambda m: (rank[state.get(m, "offline")], m.lower()))
+        hot = [m for m in models if state.get(m) == "hot"]
+        if hot_only:
+            print("%s (%s): %d hot%s" % (cluster, framework, len(hot), note))
+            models = hot
+        else:
+            print("%s (%s): %d model%s, %d hot%s" % (cluster, framework, len(models), "" if len(models) == 1 else "s", len(hot), note))
+        for model in models:
+            print("  %-8s  %s" % (state.get(model, "offline"), model))
+'
+
+# List models. "all" covers MAG and ALCF; "hot" shows only the ALCF models that are loaded now.
+models() {
+  local which="$1" folder status token cluster rc=0
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "$_cmd: listing models needs python3" >&2
+    return 1
+  fi
+  folder="$(mktemp -d)" || return 1
+  trap "rm -f '$folder'/*.json; rmdir '$folder'" EXIT
+  if [[ "$which" == all ]]; then
+    if [[ -z "${AMSC_TOKEN:-}" ]]; then
+      echo "MAG: no AMSC_TOKEN (the *-amsc commands ask for a PAT)"
+    elif status="$(_http_get "$AMSC_TOKEN" "$MAG_URL/v1/models" "$folder/mag.json")" && [[ "$status" == 200 ]]; then
+      echo "MAG:"
+      python3 -c "$MAG_MODELS_PY" < "$folder/mag.json" || rc=1
+    else
+      report "MAG (AMSC_TOKEN)" "$status" "Renew: create a new PAT, then: read -rs AMSC_TOKEN && export AMSC_TOKEN" || rc=1
+    fi
+  fi
+  # Like the *-alcf commands: the token from the host while ALCF accepts it, else the alcf-tokens login.
+  token="${ALCF_AI_TOKEN:-}"
+  [[ -n "$token" ]] && status="$(_http_get "$token" "$ALCF_URL/list-endpoints" "$folder/endpoints.json")"
+  if [[ -z "$token" || "$status" =~ ^40[13]$ ]] && _alcf_get_token; then
+    token="$ALCF_AI_TOKEN"
+    status="$(_http_get "$token" "$ALCF_URL/list-endpoints" "$folder/endpoints.json")"
+  fi
+  if [[ -z "$token" ]]; then
+    echo "ALCF: not logged in. Log in: alcf-tokens login inference"
+    return 1
+  elif [[ "$status" != 200 ]]; then
+    report "ALCF" "$status" "Renew: alcf-tokens login inference"
+    return 1
+  fi
+  echo "ALCF (hot: loaded now; starting or queued: loading; offline: loads on the first request, which can take minutes):"
+  for cluster in $(python3 -c 'import json, re, sys
+print(" ".join(c for c in json.load(sys.stdin).get("clusters") or {} if re.match(r"^[A-Za-z0-9_-]+$", c)))' \
+      < "$folder/endpoints.json"); do
+    [[ "$(_http_get "$token" "$ALCF_URL/$cluster/jobs" "$folder/jobs-$cluster.json")" == 200 ]] ||
+      rm -f "$folder/jobs-$cluster.json"
+  done
+  python3 -c "$ALCF_MODELS_PY" "$folder" "$which" || rc=1
+  return "$rc"
+}
+
 case "${1:-}" in
   "") summary ;;
   --check) check ;;
-  -h|--help) sed -n '2,5s/^# \{0,1\}//p' "$0" ;;
-  *) echo "usage: $_cmd [--check]" >&2; exit 2 ;;
+  --models) models all ;;
+  --hot) models hot ;;
+  -h|--help) sed -n '2,7s/^# \{0,1\}//p' "$0" ;;
+  *) echo "usage: $_cmd [--check | --models | --hot]" >&2; exit 2 ;;
 esac

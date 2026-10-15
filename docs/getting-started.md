@@ -298,7 +298,8 @@ If you cloned this repository, you can instead add its `bin` folder to your `PAT
 (`export PATH="/path/to/AgenticCodingTutorial/bin:$PATH"` in `~/.zshrc` or `~/.bashrc`) and update with `git pull`.
 
 **Save your MAG PAT** so you are not asked every time. Add this line to `~/.zshrc` (macOS) or `~/.bashrc` (Linux)
-and open a new terminal. PATs are short-lived. `agent-status --check` tells you whether your MAG and ALCF tokens still work. When MAG
+and open a new terminal. PATs are short-lived. `agent-status --check` tells you whether your MAG and ALCF tokens still work, and `agent-status --models` lists the
+models each offers (`--hot`: only the ALCF models loaded now). When MAG
 rejects the PAT, create a new one on [myAmSC](https://my.amsc.energy.gov/dashboard) and replace it in your
 startup file. For the terminal you have open, run `read -rs AMSC_TOKEN && export AMSC_TOKEN` and paste it.
 
