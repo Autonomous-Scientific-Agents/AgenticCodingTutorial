@@ -1,8 +1,9 @@
 # Token helpers shared by the {claude,codex,opencode}-{amsc,alcf} commands. Source this file; do not run it.
 # The commands work in the tutorial container and on your own machine (bash 3.2 or newer, curl).
 #
-#   require_amsc_token   AMSC_TOKEN (MAG PAT) from the host, or ask for one in a terminal (this session only)
-#   require_alcf_token   ALCF_AI_TOKEN from the host, or from alcf-tokens, logging in first in a terminal
+#   require_amsc_token   AMSC_TOKEN (MAG PAT) from the host, or ask for one in a terminal (this run only)
+#   require_alcf_token   ALCF_AI_TOKEN from the host while ALCF accepts it, else from alcf-tokens,
+#                        logging in first in a terminal
 #   exec_opencode        start opencode so that it reads OPENCODE_CONFIG_CONTENT
 
 MAG_URL=https://mag.genesis.americansciencecloud.org
@@ -11,9 +12,6 @@ _cmd="${0##*/}"
 
 _interactive() { [[ -t 0 && -t 1 ]]; }
 in_container() { [[ -n "${AGENTIC_CODING_CONTAINER:-}" ]]; }
-
-# What to do after changing a variable on the host.
-if in_container; then _restart="restart the container"; else _restart="open a new terminal"; fi
 
 _mag_steps() {
   cat >&2 <<'EOF'
@@ -34,9 +32,24 @@ To have it set automatically, store the PAT $where:
 EOF
 }
 
-# HTTP status of a MAG request with this PAT (000 when MAG cannot be reached).
-_mag_check() {
-  curl -s -o /dev/null -w '%{http_code}' -m 10 -H "Authorization: Bearer $1" "$MAG_URL/v1/models" || true
+# HTTP status of a request with this token (000 when there is no answer). The header goes in on stdin,
+# so the token does not show up in the process list.
+_http_status() {
+  printf 'Authorization: Bearer %s\n' "$1" | curl -s -o /dev/null -w '%{http_code}' -m 10 -H @- "$2" || true
+}
+
+# HTTP status of a MAG request with this PAT.
+_mag_check() { _http_status "$1" "$MAG_URL/v1/models"; }
+
+# HTTP status of an ALCF request with this token.
+_alcf_check() { _http_status "$1" "$ALCF_URL/list-endpoints"; }
+
+# Said after a pasted PAT is accepted: it lasts for this run, and how to keep it.
+_mag_kept() {
+  cat >&2 <<'EOF'
+Using this PAT for this run only. To use it for the rest of this shell, paste it once more here:
+  read -rs AMSC_TOKEN && export AMSC_TOKEN
+EOF
 }
 
 _mag_ask() {
@@ -64,13 +77,14 @@ require_amsc_token() {
       exit 1
     fi
     _mag_ask || { echo "$_cmd: no valid PAT." >&2; exit 1; }
-    echo "Using this PAT for this agent run only; later launches will ask again." >&2
+    _mag_kept
     _mag_host_steps
   elif _interactive && [[ "$(_mag_check "$AMSC_TOKEN")" =~ ^40[13]$ ]]; then
     echo "$_cmd: MAG rejected AMSC_TOKEN; PATs are short-lived, so it has probably expired." >&2
     _mag_steps
     _mag_ask || { echo "$_cmd: no valid PAT." >&2; exit 1; }
-    echo "Using the new PAT for now. Update AMSC_TOKEN too, then $_restart." >&2
+    _mag_kept
+    _mag_host_steps
   fi
   export AMSC_TOKEN
 }
@@ -81,6 +95,11 @@ _alcf_get_token() {
 }
 
 require_alcf_token() {
+  # A token passed in from the host lasts 48 hours; once ALCF rejects it, fall back to alcf-tokens.
+  if [[ -n "${ALCF_AI_TOKEN:-}" ]] && _interactive && [[ "$(_alcf_check "$ALCF_AI_TOKEN")" =~ ^40[13]$ ]]; then
+    echo "$_cmd: ALCF rejected ALCF_AI_TOKEN (tokens last 48 hours); getting a new one." >&2
+    unset ALCF_AI_TOKEN
+  fi
   if [[ -z "${ALCF_AI_TOKEN:-}" ]] && ! _alcf_get_token; then
     if _interactive && ! command -v alcf-tokens >/dev/null 2>&1; then
       echo "$_cmd: alcf-tokens is not installed. Install it with: uv tool install alcf-tokens" >&2
