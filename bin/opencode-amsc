@@ -1,19 +1,29 @@
 #!/bin/bash
-# OpenCode through the AmSC Model Access Gateway (MAG), with the provider MAG documents:
+# OpenCode through the AmSC Model Access Gateway (MAG), based on the provider MAG documents:
 # https://docs.amsc.energy.gov/client-applications/coding-tools/opencode
+# The menu, context budgets and reasoning effort are curated here and extend MAG's example;
+# see docs/container.md for the selection policy.
 # Needs AMSC_TOKEN (your MAG PAT); without it, in a terminal, this asks for one for this session.
 # The provider is passed in OPENCODE_CONFIG_CONTENT, so your opencode.json files are not changed.
 #
 #   opencode-amsc                          start OpenCode (AMSC_OPENCODE_MODEL or claude-sonnet)
 #   opencode-amsc run -m amsc-mag/gpt-6-luna "..."   one message; in the app, /models lists the MAG models
+# Context limits are working budgets below the catalog maximums, to keep long sessions affordable.
 set -euo pipefail
 source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
 
 require_amsc_token
 
+model="${AMSC_OPENCODE_MODEL:-claude-sonnet}"
+model="${model#amsc-mag/}"
+if [[ ! "$model" =~ ^[A-Za-z0-9._:@-]+$ ]]; then
+  echo "opencode-amsc: AMSC_OPENCODE_MODEL='$model' is not a model ID" >&2
+  exit 1
+fi
+
 export OPENCODE_CONFIG_CONTENT='{
   "$schema": "https://opencode.ai/config.json",
-  "model": "amsc-mag/'"${AMSC_OPENCODE_MODEL:-claude-sonnet}"'",
+  "model": "amsc-mag/'"$model"'",
   "compaction": { "auto": true, "prune": true, "reserved": 20000 },
   "provider": {
     "amsc-mag": {
@@ -21,15 +31,56 @@ export OPENCODE_CONFIG_CONTENT='{
       "name": "AmSC MAG",
       "options": { "baseURL": "'"$MAG_URL"'/v1", "apiKey": "{env:AMSC_TOKEN}" },
       "models": {
-        "claude-haiku":  { "name": "Claude Haiku",  "limit": { "context": 100000, "output": 32000 } },
-        "claude-sonnet": { "name": "Claude Sonnet", "limit": { "context": 200000, "output": 64000 } },
-        "gpt-6-luna":    { "name": "GPT-6 Luna",    "limit": { "context": 272000, "output": 32000 },
-                           "options": { "reasoningEffort": "high" } },
-        "gemini-flash":  { "name": "Gemini Flash",  "limit": { "context": 1048576, "output": 65536 },
-                           "options": { "reasoningEffort": "medium" } }
+        "claude-haiku":       { "name": "Claude Haiku (latest)",          "limit": { "context": 100000, "output": 32000 } },
+        "claude-sonnet":      { "name": "Claude Sonnet (latest)",         "limit": { "context": 200000, "output": 64000 } },
+        "claude-haiku-5-5":   { "name": "Anthropic · Claude Haiku 5.5",   "limit": { "context": 100000, "output": 32000 } },
+        "claude-sonnet-5-5":  { "name": "Anthropic · Claude Sonnet 5.5",  "limit": { "context": 200000, "output": 64000 } },
+        "claude-opus-5-5":    { "name": "Anthropic · Claude Opus 5.5",    "limit": { "context": 200000, "output": 64000 } },
+        "gpt-5.6-luna":       { "name": "OpenAI · GPT-5.6 Luna",  "limit": { "context": 272000, "output": 32000 },
+                                "options": { "reasoningEffort": "medium" } },
+        "gpt-6-luna":         { "name": "OpenAI · GPT-6 Luna",    "limit": { "context": 272000, "output": 32000 },
+                                "options": { "reasoningEffort": "high" } },
+        "gpt-5.6-terra":      { "name": "OpenAI · GPT-5.6 Terra", "limit": { "context": 272000, "output": 32000 },
+                                "options": { "reasoningEffort": "medium" } },
+        "gpt-6-sol":          { "name": "OpenAI · GPT-6 Sol",     "limit": { "context": 272000, "output": 32000 },
+                                "options": { "reasoningEffort": "medium" } },
+        "gpt-6.1-sol":        { "name": "OpenAI · GPT-6.1 Sol",   "limit": { "context": 272000, "output": 32000 },
+                                "options": { "reasoningEffort": "medium" } },
+        "gpt-6-astra":        { "name": "OpenAI · GPT-6 Astra",   "limit": { "context": 272000, "output": 32000 },
+                                "options": { "reasoningEffort": "medium" } },
+        "gpt-oss-120b":       { "name": "OpenAI · GPT-OSS 120B",  "limit": { "context": 128000, "output": 16384 },
+                                "options": { "reasoningEffort": "medium" } },
+        "gemini-flash":                 { "name": "Gemini Flash (latest)",          "limit": { "context": 1048576, "output": 65536 },
+                                          "options": { "reasoningEffort": "medium" } },
+        "gemini-3.7-flash@google":      { "name": "Google · Gemini 3.7 Flash",      "limit": { "context": 1048576, "output": 65536 },
+                                          "options": { "reasoningEffort": "medium" } },
+        "gemini-3.8-flash@google":      { "name": "Google · Gemini 3.8 Flash",      "limit": { "context": 1048576, "output": 65536 },
+                                          "options": { "reasoningEffort": "medium" } },
+        "gemini-3.1-flash-lite@google": { "name": "Google · Gemini 3.1 Flash Lite", "limit": { "context": 1048576, "output": 65536 },
+                                          "options": { "reasoningEffort": "medium" } },
+        "gemini-3.5-flash-lite@google": { "name": "Google · Gemini 3.5 Flash Lite", "limit": { "context": 1048576, "output": 65536 },
+                                          "options": { "reasoningEffort": "medium" } },
+        "gemini-2.5-pro@google":        { "name": "Google · Gemini 2.5 Pro",        "limit": { "context": 200000, "output": 65535 },
+                                          "options": { "reasoningEffort": "medium" } },
+        "gemini-3.1-pro-preview@google": { "name": "Google · Gemini 3.1 Pro Preview", "limit": { "context": 200000, "output": 65536 },
+                                          "options": { "reasoningEffort": "medium" } },
+        "gemini-4-argon@google":        { "name": "Google · Gemini 4 Argon",        "limit": { "context": 200000, "output": 32000 },
+                                          "options": { "reasoningEffort": "medium" } },
+        "grok-4-1-fast-reasoning": { "name": "xAI · Grok 4.1 Fast Reasoning", "limit": { "context": 128000, "output": 32000 } },
+        "grok-4.6":                { "name": "xAI · Grok 4.6",                "limit": { "context": 200000, "output": 32000 } },
+        "grok-4.7":                { "name": "xAI · Grok 4.7",                "limit": { "context": 200000, "output": 32000 } },
+        "devstral-2@amazon":       { "name": "Mistral · Devstral 2",          "limit": { "context": 200000, "output": 32000 } },
+        "mistral-large-3@amazon":  { "name": "Mistral · Large 3",             "limit": { "context": 200000, "output": 32000 } },
+        "nemotron-super-3@amazon": { "name": "NVIDIA · Nemotron Super 3",     "limit": { "context": 200000, "output": 32000 } }
       }
     }
   }
 }'
+
+if [[ "$OPENCODE_CONFIG_CONTENT" != *"\"$model\":"* ]]; then
+  echo "opencode-amsc: '$model' is not in the MAG menu (from AMSC_OPENCODE_MODEL)." >&2
+  echo "Unset AMSC_OPENCODE_MODEL or set it to an ID that 'opencode-amsc models amsc-mag' lists." >&2
+  exit 1
+fi
 
 exec_opencode "$@"

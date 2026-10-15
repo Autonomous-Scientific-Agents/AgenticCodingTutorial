@@ -222,6 +222,37 @@ Check access inside the container:
 curl -s -H "Authorization: Bearer $AMSC_TOKEN" https://mag.genesis.americansciencecloud.org/v1/models | head -c 300
 ```
 
+#### OpenCode model menu
+
+`bin/opencode-amsc` defines the MAG menu in `OPENCODE_CONFIG_CONTENT` each time it runs. The menu is
+curated from MAG's `/v1/models` catalog; it is not downloaded at startup. It keeps the rolling aliases from
+[MAG's OpenCode setup](https://docs.amsc.energy.gov/client-applications/coding-tools/opencode)
+(`claude-haiku`, `claude-sonnet`, `gemini-flash`), which follow the newest version, and adds up to two
+recent pinned versions per model line, without listing every provider, effort, or service-tier variant.
+Models are added only once they handle OpenCode's tool calls and file edits. List the current menu with:
+
+```bash
+opencode-amsc models amsc-mag
+```
+
+Context limits are working budgets, not the catalog maximums: long contexts cost more on every turn, and
+OpenCode compacts only near the limit. Claude follows MAG's caps (100,000 for Haiku, 200,000 for Sonnet
+and Opus), GPT models use 272,000, and most others 200,000. Reasoning effort is set per model, for example
+`high` for `gpt-6-luna` and `medium` for Gemini; Claude runs without extended thinking. See
+[MAG model names](https://docs.amsc.energy.gov/model-names/) for routing and effort rules. IDs ending in
+`@google` or `@amazon` select that provider; other IDs let MAG choose.
+
+To start with another model, set `AMSC_OPENCODE_MODEL` to an ID from the list (with or without the
+`amsc-mag/` prefix), or pick one with `/models` in the app. For a single message:
+
+```bash
+AMSC_OPENCODE_MODEL=gemini-3.8-flash@google opencode-amsc
+opencode-amsc run -m amsc-mag/claude-opus-5-5 "..."
+```
+
+An already running container keeps its installed wrapper. Pull the newest published image, or rebuild
+locally with `./run.sh build`, then start a new container to use an updated model menu.
+
 ### ALCF Inference Endpoints
 
 [ALCF Inference Endpoints](https://docs.alcf.anl.gov/services/inference-endpoints) serve open-weight models
