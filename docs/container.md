@@ -156,7 +156,6 @@ The script passes these variables when they are set:
   `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS`, `CLAUDE_CODE_NO_FLICKER`, `CLAUDE_CODE_SUBAGENT_MODEL`,
   `DISABLE_TELEMETRY` and `DISABLE_NON_ESSENTIAL_MODEL_CALLS`
 - `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENROUTER_API_KEY`
-- `I2CORE_API_KEY` for [i2-core](endpoints.md#i2-core)
 
 When a shell starts in the container, one line shows what is ready, for example
 `MAG ready (claude-amsc) · ALCF: not logged in (claude-alcf walks you through it) · GitHub ready`.

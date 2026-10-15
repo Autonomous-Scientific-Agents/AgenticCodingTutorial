@@ -57,8 +57,7 @@ Compare scores only when the harness and the data split are the same.
 - [argo-proxy](https://github.com/oaklight/argo-proxy) — multi-format gateway to ARGO for ANL-internal users; translates OpenAI, Anthropic, and Google GenAI formats.
 - [argo-shim](https://github.com/n-getty/argo-shim) — lightweight HTTP proxy + SSH tunnel for Claude Code and Codex CLI on ALCF machines.
 - [ALCF Inference Endpoints](https://docs.alcf.anl.gov/services/inference-endpoints) — open-weight models on ALCF hardware (Sophia, Metis, Minerva); Globus auth; web UI and API access.
-- [i2-core API](https://api.i2-core.american-science-cloud.org/) — AmSC Intelligent Interfaces; curated commercial models via OpenAI-compatible API (experimental; key manager link).
-- [Custom endpoints guide](endpoints.md) — setup walkthrough for argo-proxy, argo-shim, ALCF Inference, and i2-core with multiple tools.
+- [Custom endpoints guide](endpoints.md) — setup walkthrough for argo-proxy, argo-shim, and ALCF Inference with multiple tools.
 
 ## Tutorial container
 

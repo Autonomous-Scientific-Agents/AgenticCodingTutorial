@@ -25,7 +25,7 @@ Build with tests, make it fast, give it a face.
 - [Working with multiple agents](multi-agents.md): divide work, run sessions in parallel, integrate.
 - [Skills and MCP](skills-mcp.md): extend the agent with procedures and tools; where to find good ones.
 - [Models and budget](models.md): how to choose, and how to see what you spend.
-- [Custom endpoints](endpoints.md): argo-proxy, argo-shim, ALCF Inference Endpoints and i2-core.
+- [Custom endpoints](endpoints.md): argo-proxy, argo-shim and ALCF Inference Endpoints.
 - [Hands-on demo](lab.md): demo repositories.
 - [Helpers](helpers.md): who to ask, and about what.
 

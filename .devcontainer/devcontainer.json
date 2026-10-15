@@ -25,7 +25,6 @@
     "OPENROUTER_API_KEY": "${localEnv:OPENROUTER_API_KEY}",
     "AMSC_TOKEN": "${localEnv:AMSC_TOKEN}",
     "ALCF_AI_TOKEN": "${localEnv:ALCF_AI_TOKEN}",
-    "I2CORE_API_KEY": "${localEnv:I2CORE_API_KEY}",
     "GH_TOKEN": "${localEnv:GH_TOKEN}"
   },
   "customizations": {

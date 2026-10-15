@@ -1,13 +1,12 @@
 # Custom LLM endpoints
 
-Point your coding agent at Argonne-hosted backends: argo-proxy (ANL), argo-shim (ALCF compute), ALCF Inference Endpoints (open-weight models), or i2-core (AmSC commercial models).
+Point your coding agent at Argonne-hosted backends: argo-proxy (ANL), argo-shim (ALCF compute), or ALCF Inference Endpoints (open-weight models).
 
 | Backend | Network | Auth | Tools covered here | Official docs |
 |---|---|---|---|---|
 | **argo-proxy** | ANL internal / VPN | ANL username | Claude Code, Codex CLI, OpenCode, Kilo Code | [argo-proxy ReadTheDocs](https://argo-proxy.readthedocs.io) |
 | **argo-shim** | ALCF machine (UAN/login) | CELS SSH key | Claude Code, Codex CLI | [argo-shim README](https://github.com/n-getty/argo-shim) |
 | **ALCF Inference** | Public (Globus auth) | Globus token | All five (Cursor and Kilo Code untested) | [ALCF Inference Endpoints](https://docs.alcf.anl.gov/services/inference-endpoints) |
-| **i2-core** | Public | API key | OpenCode | [API key manager](https://api.i2-core.american-science-cloud.org/) |
 
 !!! note "MAG (Model Access Gateway)"
     Genesis Mission teams already have model access through the [AmSC Model Access Gateway (MAG)](https://docs.amsc.energy.gov/model-access-gateway/). MAG docs cover setup for Claude Code and Codex CLI directly; this page covers argo-proxy/argo-shim/ALCF self-hosted alternatives.
@@ -382,95 +381,15 @@ See [ALCF Inference Troubleshooting](https://docs.alcf.anl.gov/services/inferenc
 
 ---
 
-## i2-core
-
-AmSC Intelligent Interfaces (i2) commercial API. Access a curated set of models (e.g., `grok-4.6`) via an OpenAI-compatible endpoint.
-
-!!! warning "Experimental service — read the ToS"
-    i2-core is experimental and subject to change. Service availability is best-effort only. **Do not** transmit PII, confidential, or export-controlled data. **Do not** connect to public-facing chatbots. Store your key securely (env vars, secrets manager) and **immediately disable it if leaked**. Support: [andrew.schmeder@americansciencecloud.org](mailto:andrew.schmeder@americansciencecloud.org).
-
-### Get a key
-
-Visit the [i2-core API key manager](https://api.i2-core.american-science-cloud.org/) and request an API key. Store it securely:
-
-```bash
-export I2CORE_API_KEY="sk-xxxxxxxxxx"
-```
-
-Never commit or publish the key.
-
-### Test the API
-
-List available models:
-
-```bash
-curl -X 'GET' \
-    'https://api.i2-core.american-science-cloud.org/models' \
-  -H "Authorization: Bearer ${I2CORE_API_KEY}" \
-  -H 'accept: application/json'
-```
-
-Chat completions (example):
-
-```bash
-curl -X 'POST' \
-  'https://api.i2-core.american-science-cloud.org/v1/chat/completions' \
-  -H "Authorization: Bearer ${I2CORE_API_KEY}" \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "model": "grok-4.6",
-  "messages": [
-    {
-      "role": "user",
-      "content": "Hello, how are you?"
-    }
-  ]}'
-```
-
-### OpenCode
-
-Add to `~/.config/opencode/opencode.json`:
-
-```json
-{
-  "provider": {
-    "i2-core": {
-      "name": "i2-core (AmSC)",
-      "npm": "@ai-sdk/openai-compatible",
-      "options": {
-        "baseURL": "https://api.i2-core.american-science-cloud.org/v1",
-        "apiKey": "{env:I2CORE_API_KEY}"
-      },
-      "models": {
-        "grok-4.6": { "name": "Grok 4.6" }
-      }
-    }
-  }
-}
-```
-
-Before running OpenCode, export your key:
-
-```bash
-export I2CORE_API_KEY="sk-xxxxxxxxxx"
-opencode
-```
-
-List all available models and add them to the `models` object above — fetch from the API with the curl command above instead of hard-coding.
-
----
-
 ## In the container
 
-The tutorial `run.sh` and `run.ps1` (and the dev container) pass `ALCF_AI_TOKEN`, `I2CORE_API_KEY`, the
+The tutorial `run.sh` and `run.ps1` (and the dev container) pass `ALCF_AI_TOKEN`, the
 `OPENAI_*` and `ANTHROPIC_*` keys and others from your host when they are set; the full list is in
 [Run in a container](container.md#4-model-access-and-logins). Set the keys on the host, then start the
 container:
 
 ```bash
 export ALCF_AI_TOKEN="$(alcf-tokens get-token inference)"   # ALCF Inference (expires after 48 hours)
-export I2CORE_API_KEY="sk-xxxxxxxxxx"                         # i2-core
 /path/to/run.sh
 ```
 
@@ -493,4 +412,3 @@ container; that folder is a named volume, so it is kept across runs.
 | **On ALCF machine, Claude Code or Codex** | argo-shim | No local proxy needed; SSH tunnel handles auth |
 | **Public/multi-institutional, open models** | ALCF Inference | Globus auth, official ALCF support, web UI included |
 | **Genesis Mission, any tool** | MAG or argo-proxy | MAG has direct docs; argo-proxy as fallback |
-| **AmSC commercial models, OpenCode** | i2-core | Curated commercial models via OpenAI-compatible API |
