@@ -3,6 +3,7 @@
 # https://docs.alcf.anl.gov/services/inference-endpoints/agents/
 # Gets ALCF_AI_TOKEN like claude-alcf (from the host, or alcf-tokens, logging in first in a terminal).
 # Codex has no metadata for these models and warns about it; the defaults work.
+# Gemma does not work with Codex: Sophia's Responses API returns its tool calls as plain text (see alcf_model).
 #
 #   codex-alcf                         start Codex with the default model (ALCF_CODEX_MODEL or inkling-bf16)
 #   codex-alcf -m nemotron-3-ultra     any codex option works

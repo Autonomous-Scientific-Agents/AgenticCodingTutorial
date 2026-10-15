@@ -322,14 +322,18 @@ tokens on their own, so you only need to log in again (`alcf-tokens login infere
 30 days.
 
 **2. Start an agent on ALCF.** The commands use Minerva, which serves `inkling-bf16`, `nemotron-3-ultra` and
-`gpt-oss-120b`. The [ALCF agents page](https://docs.alcf.anl.gov/services/inference-endpoints/agents/) lists
-the current endpoints and models.
+`gpt-oss-120b`, and Sophia for `gemma-4-31B-it`. They pick the cluster from the model name. The
+[ALCF agents page](https://docs.alcf.anl.gov/services/inference-endpoints/agents/) lists the current endpoints
+and models.
 
-| Command | Default model | Change it |
-|---|---|---|
-| `claude-alcf` | `inkling-bf16` | set `ALCF_CLAUDE_MODEL` |
-| `codex-alcf` | `inkling-bf16` | `codex-alcf -m nemotron-3-ultra`, or set `ALCF_CODEX_MODEL` |
-| `opencode-alcf` | `inkling-bf16` | `/models` in OpenCode, or set `ALCF_OPENCODE_MODEL` |
+| Command | Default model | Change it | Models |
+|---|---|---|---|
+| `claude-alcf` | `inkling-bf16` | `claude-alcf --model nemotron-3-ultra`, or set `ALCF_CLAUDE_MODEL` | inkling, Nemotron |
+| `codex-alcf` | `inkling-bf16` | `codex-alcf -m nemotron-3-ultra`, or set `ALCF_CODEX_MODEL` | inkling, Nemotron |
+| `opencode-alcf` | `inkling-bf16` | `/models` in OpenCode, or set `ALCF_OPENCODE_MODEL` | inkling, Nemotron, gpt-oss, Gemma |
+
+Only OpenCode can use Gemma: Sophia does not stream Anthropic Messages, which Claude Code needs, and its
+Responses API returns Gemma's tool calls as text, which breaks Codex.
 
 Other endpoints: set `ALCF_ANTHROPIC_BASE_URL` (Claude Code) or `ALCF_OPENAI_BASE_URL` (Codex, OpenCode).
 To set up the tools by hand instead, see [Custom endpoints: ALCF Inference Endpoints](endpoints.md#alcf-inference-endpoints).

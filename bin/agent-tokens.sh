@@ -4,6 +4,7 @@
 #   require_amsc_token   AMSC_TOKEN (MAG PAT) from the host, or ask for one in a terminal (this run only)
 #   require_alcf_token   ALCF_AI_TOKEN from the host while ALCF accepts it, else from alcf-tokens,
 #                        logging in first in a terminal
+#   alcf_model <name>    set ALCF_MODEL and ALCF_PATH, the name and cluster that serve this model to agents
 #   exec_opencode        start opencode so that it reads OPENCODE_CONFIG_CONTENT
 
 MAG_URL=https://mag.genesis.americansciencecloud.org
@@ -89,6 +90,16 @@ require_amsc_token() {
     _mag_host_steps
   fi
   export AMSC_TOKEN
+}
+
+# Minerva serves inkling-bf16 and nemotron-3-ultra. Gemma 4 31B runs on Sophia's vLLM (Metis has it too, but
+# its tool calls have known issues). Only OpenCode can use it there: Sophia does not stream Anthropic Messages,
+# which Claude Code needs, and its Responses API returns Gemma's tool calls as text, which breaks Codex.
+alcf_model() {
+  case "$1" in
+    gemma-4-31B-it|google/gemma-4-31B-it) ALCF_MODEL=google/gemma-4-31B-it ALCF_PATH=sophia/vllm ;;
+    *) ALCF_MODEL="$1" ALCF_PATH=minerva/api ;;
+  esac
 }
 
 _alcf_get_token() {

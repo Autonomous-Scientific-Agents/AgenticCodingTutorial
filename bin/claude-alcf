@@ -4,26 +4,44 @@
 # Uses ALCF_AI_TOKEN when run.sh passed one in from the host. Otherwise it gets a token with alcf-tokens,
 # and in a terminal walks you through the Globus login first (kept in the ai-agents-globus volume).
 #
-#   claude-alcf                               start Claude Code with the default model
-#   ALCF_CLAUDE_MODEL=<name> claude-alcf      pick another model
+#   claude-alcf                               start Claude Code with inkling-bf16
+#   claude-alcf --model nemotron-3-ultra      another Minerva model, also for subagents and the opus/sonnet/haiku names
+#   ALCF_CLAUDE_MODEL=<name> claude-alcf      the same, for every run in this shell
 set -euo pipefail
 source "$(dirname "$(readlink -f "$0")")/agent-tokens.sh"
 
 require_alcf_token
 
+# --model is read here, not passed on, so the main model, subagents and model names all use it.
 model="${ALCF_CLAUDE_MODEL:-inkling-bf16}"
+args=()
+while (($#)); do
+  case "$1" in
+    --model)
+      [[ $# -ge 2 ]] || { echo "$_cmd: --model needs a model name" >&2; exit 2; }
+      model="$2"; shift 2 ;;
+    --model=*) model="${1#--model=}"; shift ;;
+    --) args+=("$@"); break ;;
+    *) args+=("$1"); shift ;;
+  esac
+done
+alcf_model "$model"
+if [[ "$ALCF_PATH" != minerva/api && -z "${ALCF_ANTHROPIC_BASE_URL:-}" ]]; then
+  echo "$_cmd: $model does not work with Claude Code: Sophia does not stream Anthropic Messages. Use opencode-alcf." >&2
+  exit 2
+fi
 
 unset ANTHROPIC_API_KEY  # would be sent instead of the ALCF token
 export ANTHROPIC_AUTH_TOKEN="$ALCF_AI_TOKEN"
 # Claude Code adds /v1/messages itself, so the base URL stops at /api.
-export ANTHROPIC_BASE_URL="${ALCF_ANTHROPIC_BASE_URL:-$ALCF_URL/minerva/api}"
-export ANTHROPIC_MODEL="$model"
-export ANTHROPIC_DEFAULT_OPUS_MODEL="$model"
-export ANTHROPIC_DEFAULT_SONNET_MODEL="$model"
-export ANTHROPIC_DEFAULT_HAIKU_MODEL="$model"
-export CLAUDE_CODE_SUBAGENT_MODEL="$model"
+export ANTHROPIC_BASE_URL="${ALCF_ANTHROPIC_BASE_URL:-$ALCF_URL/$ALCF_PATH}"
+export ANTHROPIC_MODEL="$ALCF_MODEL"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="$ALCF_MODEL"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="$ALCF_MODEL"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="$ALCF_MODEL"
+export CLAUDE_CODE_SUBAGENT_MODEL="$ALCF_MODEL"
 export DISABLE_NON_ESSENTIAL_MODEL_CALLS=1
 export DISABLE_TELEMETRY=1
 export CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1
 
-exec claude "$@"
+exec claude ${args[@]+"${args[@]}"}

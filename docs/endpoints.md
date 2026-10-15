@@ -261,7 +261,7 @@ Three active clusters. Pick based on your agent and model needs:
 
 | Cluster | Base URL | API formats | Use case |
 |---|---|---|---|
-| **Sophia** | `https://inference-api.alcf.anl.gov/resource_server/sophia/vllm/v1` | Chat Completions, Responses, Anthropic Messages, Embeddings | Most open models; chat and coding agents |
+| **Sophia** | `https://inference-api.alcf.anl.gov/resource_server/sophia/vllm/v1` | Chat Completions, Responses, Anthropic Messages, Embeddings | Most open models; chat and coding agents. `opencode-alcf` uses it for `google/gemma-4-31B-it` |
 | **Metis** | `https://inference-api.alcf.anl.gov/resource_server/metis/api/v1` | Chat Completions, Responses | SambaNova hardware; tool-calling has known issues |
 | **Minerva** | `https://inference-api.alcf.anl.gov/resource_server/minerva/api/v1` | Chat Completions, Responses, Anthropic Messages | Direct API endpoint; ALCF's choice for Claude Code and Codex (`inkling-bf16`, `nemotron-3-ultra`) |
 

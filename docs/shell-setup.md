@@ -411,8 +411,8 @@ Run once on a backend. Claude Code options work as usual:
 cd my-project
 claude-amsc                              # Claude Code on MAG
 claude-amsc --model claude-haiku         # a cheaper MAG model; run /autocompact 100000 in the session
-claude-alcf                              # Claude Code on ALCF (inkling-bf16)
-ALCF_CLAUDE_MODEL=<model> claude-alcf    # another ALCF model
+claude-alcf                                      # Claude Code on ALCF (inkling-bf16)
+ALCF_CLAUDE_MODEL=nemotron-3-ultra claude-alcf   # another Minerva model
 ```
 
 Or switch the current shell, so that plain `claude` uses that backend. Other programs you start from this shell
