@@ -229,7 +229,8 @@ curated from MAG's `/v1/models` catalog; it is not downloaded at startup. It kee
 [MAG's OpenCode setup](https://docs.amsc.energy.gov/client-applications/coding-tools/opencode)
 (`claude-haiku`, `claude-sonnet`, `gemini-flash`), which follow the newest version, and adds up to two
 recent pinned versions per model line, without listing every provider, effort, or service-tier variant.
-Models are added only once they handle OpenCode's tool calls and file edits. List the current menu with:
+Models with small output limits, or on routes MAG doesn't document, are left out until a live check shows
+they handle OpenCode's tool calls and file edits. List the current menu with:
 
 ```bash
 opencode-amsc models amsc-mag
@@ -237,7 +238,8 @@ opencode-amsc models amsc-mag
 
 Context limits are working budgets, not the catalog maximums: long contexts cost more on every turn, and
 OpenCode compacts only near the limit. Claude follows MAG's caps (100,000 for Haiku, 200,000 for Sonnet
-and Opus), GPT models use 272,000, and most others 200,000. Reasoning effort is set per model, for example
+and Opus). GPT models other than GPT-OSS use 272,000, and Gemini Flash and Flash Lite use 1,048,576 as MAG
+documents for Gemini Flash; the rest use at most 200,000. Reasoning effort is set per model, for example
 `high` for `gpt-6-luna` and `medium` for Gemini; Claude runs without extended thinking. See
 [MAG model names](https://docs.amsc.energy.gov/model-names/) for routing and effort rules. IDs ending in
 `@google` or `@amazon` select that provider; other IDs let MAG choose.

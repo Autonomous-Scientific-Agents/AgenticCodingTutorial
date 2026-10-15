@@ -77,7 +77,19 @@ export OPENCODE_CONFIG_CONTENT='{
   }
 }'
 
-if [[ "$OPENCODE_CONFIG_CONTENT" != *"\"$model\":"* ]]; then
+# Listing models and run -m don't use the default, so a stale AMSC_OPENCODE_MODEL doesn't block them.
+uses_default=1
+case "${1:-}" in
+  models) uses_default=0 ;;
+  run)
+    for arg in "${@:2}"; do
+      case "$arg" in -m|--model|--model=*) uses_default=0 ;; esac
+    done ;;
+esac
+# Only menu entries are followed by { "name", so keys such as "limit" don't count. "." is the only
+# character that the ID check allows and a regex treats specially.
+in_menu="\"${model//./\\.}\": +\{ \"name\""
+if (( uses_default )) && [[ ! "$OPENCODE_CONFIG_CONTENT" =~ $in_menu ]]; then
   echo "opencode-amsc: '$model' is not in the MAG menu (from AMSC_OPENCODE_MODEL)." >&2
   echo "Unset AMSC_OPENCODE_MODEL or set it to an ID that 'opencode-amsc models amsc-mag' lists." >&2
   exit 1
