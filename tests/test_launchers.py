@@ -147,6 +147,56 @@ class PowerShellLauncherTests(LauncherChecks, unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn('-t', capture['args'])
 
+    def test_powershell_file_redirection_does_not_allocate_a_terminal(self):
+        script = str(ROOT / 'run.ps1').replace("'", "''")
+        output = str(self.directory / 'output.txt').replace("'", "''")
+        for redirect in ('>', '>>', '*>'):
+            with self.subTest(redirect=redirect):
+                self.command = [
+                    self.command[0], '-NoProfile', '-Command',
+                    f"& '{script}' python3 --version {redirect} '{output}'; exit $LASTEXITCODE",
+                ]
+                result, capture = self.launch(stdin_terminal=True, stdout_terminal=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertNotIn('-t', capture['args'])
+
+    def test_powershell_pipeline_streams_before_producer_finishes(self):
+        # The producer waits for the engine to acknowledge its first line. Buffering
+        # until the producer finishes would deadlock instead of passing this handshake.
+        self.environment['LAUNCHER_EXIT_CODE'] = '17'
+        self.engine.write_text(ENGINE.replace(
+            "stdin = sys.stdin.read() if args[0] == 'run' and not os.isatty(0) else None",
+            "first = sys.stdin.readline()\n"
+            "    Path(os.environ['LAUNCHER_CAPTURE'] + '.ready').touch()\n"
+            "    stdin = first + sys.stdin.read()",
+        ))
+        script = str(ROOT / 'run.ps1').replace("'", "''")
+        ready = str(self.capture) + '.ready'
+        self.command = [
+            self.command[0], '-NoProfile', '-Command',
+            f"& {{ 'first'; $deadline = [DateTime]::UtcNow.AddSeconds(5); "
+            f"while (-not (Test-Path '{ready}')) {{ "
+            "if ([DateTime]::UtcNow -gt $deadline) { throw 'Input was buffered' }; "
+            "Start-Sleep -Milliseconds 20 }; 'second' } "
+            f"| & '{script}' cat; exit $LASTEXITCODE",
+        ]
+        result, capture = self.launch()
+        self.assertEqual(result.returncode, 17, result.stderr)
+        self.assertNotIn('Input was buffered', result.stderr)
+        self.assertEqual(capture['stdin'], 'first\nsecond\n')
+
+    def test_powershell_quoted_redirect_and_stderr_file_keep_terminal(self):
+        script = str(ROOT / 'run.ps1').replace("'", "''")
+        output = str(self.directory / 'stderr.txt').replace("'", "''")
+        self.command = [
+            self.command[0], '-NoProfile', '-Command',
+            f"& '{script}' echo 'a > b' 2> '{output}'; exit $LASTEXITCODE",
+        ]
+        result, capture = self.launch(stdin_terminal=True, stdout_terminal=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('-t', capture['args'])
+        self.assertEqual(capture['args'][-2:], ['echo', 'a > b'])
+
 
 if __name__ == '__main__':
     unittest.main()

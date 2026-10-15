@@ -10,6 +10,7 @@
 # agent config and login state persist in named volumes.
 #
 # Uses whichever of podman or docker is running (podman first). Force one with $env:CONTAINER_ENGINE = "docker".
+begin {
 $Image = if ($env:IMAGE) { $env:IMAGE } else { 'ghcr.io/autonomous-scientific-agents/agentic-coding:latest' }
 $Port = if ($env:PORT) { $env:PORT } else { '8080' }
 
@@ -52,6 +53,20 @@ $RunArgs = @(
 $PipelineInput = $MyInvocation.ExpectingInput
 # With pwsh -File, the host adds Out-Default; an empty invocation line identifies that case.
 $PipelineOutput = $MyInvocation.Line -and ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength)
+# PowerShell's > / >> redirections also leave the host console handles unchanged.
+# Parse the invocation rather than matching > characters in quoted command arguments.
+if ($MyInvocation.Statement) {
+    $Tokens = $null
+    $ParseErrors = $null
+    $InvocationAst = [System.Management.Automation.Language.Parser]::ParseInput(
+        $MyInvocation.Statement, [ref]$Tokens, [ref]$ParseErrors)
+    $OutputRedirections = $InvocationAst.FindAll({
+        param($Node)
+        $Node -is [System.Management.Automation.Language.FileRedirectionAst] -and
+            $Node.FromStream -in @('Output', 'All')
+    }, $false)
+    $PipelineOutput = $PipelineOutput -or $OutputRedirections.Count -gt 0
+}
 if (-not $PipelineInput -and -not $PipelineOutput -and
     -not [Console]::IsInputRedirected -and -not [Console]::IsOutputRedirected) {
     $RunArgs += '-t'
@@ -110,8 +125,20 @@ if ($Command -eq 'code') {
 }
 
 if ($PipelineInput) {
-    $input | & $Engine run @RunArgs $Image @ContainerArgs
+    # Keep one native process alive across pipeline records instead of collecting $input.
+    $EnginePipeline = { & $Engine run @RunArgs $Image @ContainerArgs }.GetSteppablePipeline()
+    $EnginePipeline.Begin($true)
 } else {
     & $Engine run @RunArgs $Image @ContainerArgs
+    exit $LASTEXITCODE
 }
-exit $LASTEXITCODE
+}
+
+process {
+    if ($PipelineInput) { $EnginePipeline.Process($_) }
+}
+
+end {
+    if ($PipelineInput) { $EnginePipeline.End() }
+    exit $LASTEXITCODE
+}
