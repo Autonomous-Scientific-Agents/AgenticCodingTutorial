@@ -253,6 +253,9 @@ The steps above work with any model provider. Genesis Mission teams can get mode
 [AmSC Model Access Gateway (MAG)](https://docs.amsc.energy.gov/model-access-gateway/), which explains how to
 request access, create a personal access token, and connect Claude Code and Codex CLI.
 
+For alternative backends hosted at Argonne, see [Custom endpoints](endpoints.md): argo-proxy (ANL network),
+argo-shim (ALCF machines), or ALCF Inference Endpoints (public, Globus auth).
+
 The [ALCF Inference Endpoints documentation](https://docs.alcf.anl.gov/services/inference-endpoints)
 describes how to point coding agents at open-weight models hosted on ALCF hardware.
 

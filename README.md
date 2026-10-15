@@ -15,6 +15,7 @@ Kilo Code), choosing a model and a budget, the hands-on lab, and the list of hel
 | Claude Code | [code.claude.com/docs](https://code.claude.com/docs/en/quickstart) · [cost tracking](https://code.claude.com/docs/en/costs) | proprietary |
 | Codex CLI | [developers.openai.com/codex](https://developers.openai.com/codex) | [openai/codex](https://github.com/openai/codex) |
 | OpenCode | [opencode.ai/docs](https://opencode.ai/docs/) · [agents](https://opencode.ai/docs/agents/) · [rules](https://opencode.ai/docs/rules/) · [skills](https://opencode.ai/docs/skills/) · [permissions](https://opencode.ai/docs/permissions/) | open source |
+| OpenCode 2 | [opencode.ai/v2/docs](https://opencode.ai/v2/docs) | open source |
 | Cursor | [cursor.com/docs](https://cursor.com/docs) | proprietary |
 | Kilo Code | [kilocode.ai/docs](https://kilocode.ai/docs) | [Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode) |
 | uv (Python projects) | [docs.astral.sh/uv](https://docs.astral.sh/uv/) | [astral-sh/uv](https://github.com/astral-sh/uv) |
@@ -38,7 +39,10 @@ Kilo Code), choosing a model and a budget, the hands-on lab, and the list of hel
 - [anthropics/skills](https://github.com/anthropics/skills) · [openai/skills](https://github.com/openai/skills) · [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) — skill collections.
 - [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) · [MCP Registry](https://registry.modelcontextprotocol.io/) · [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) — MCP servers.
 - [ChemGraph](https://github.com/argonne-lcf/ChemGraph) — computational chemistry agent with an MCP server.
+- [AtomisticSkills](https://github.com/learningmatter-mit/AtomisticSkills) — computational chemistry skills.
 - [claude-replay](https://github.com/Autonomous-Scientific-Agents/claude-replay) — turn an agent session into an HTML replay.
+- [ai4s-skills](https://github.com/ai4s-research/ai4s-skills) — skill collection for AI-for-science work.
+- [claude-scholar](https://github.com/Galaxy-Dawn/claude-scholar) — skill collection for research.
 - More, with setup for each tool: [Skills and MCP](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/skills-mcp/).
 
 ## Benchmarks: how to read a leaderboard
@@ -51,6 +55,7 @@ Kilo Code), choosing a model and a budget, the hands-on lab, and the list of hel
 | [SWE-bench-Live](https://swe-bench-live.github.io/) | continuously added tasks in many languages |
 | [Vals.ai](https://www.vals.ai/benchmarks) | independent re-runs with cost and time per task |
 | [Artificial Analysis](https://artificialanalysis.ai/leaderboards/models) | the same tests on every model, with price and cost per task |
+| [ResearchClawBench](https://internscience.github.io/ResearchClawBench-Home/) | end-to-end automated research tasks (chemistry, physics and more) |
 
 Compare scores only when the harness and the data split are the same.
 
@@ -58,6 +63,8 @@ Compare scores only when the harness and the data split are the same.
 
 - [AmSC Model Access Gateway (MAG)](https://docs.amsc.energy.gov/model-access-gateway/) — model access for Genesis Mission teams: account, project, personal access token, and setup for Claude Code and Codex CLI.
 - [ALCF Inference Endpoints](https://docs.alcf.anl.gov/services/inference-endpoints) — open-weight models on ALCF hardware, including setup for coding agents; examples in [argonne-lcf/inference-endpoints](https://github.com/argonne-lcf/inference-endpoints).
+- [Vibe Coding with Argo](https://anl.box.com/s/hxc72dkm0a8mlmo7ownfl4ixwx6iu3ko) — getting started with coding agents on Argo at ANL (ANL login required).
+- [Argo Gateway API documentation](https://anl.box.com/s/ubtrsefonqeo9xppdzcurezy8rzsbs96) — configuring local endpoints for Argo (ANL login required). Setup for each tool: [Custom endpoints](https://autonomous-scientific-agents.github.io/AgenticCodingTutorial/endpoints/).
 
 ## Tutorial container
 

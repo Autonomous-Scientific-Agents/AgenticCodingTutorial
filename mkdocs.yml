@@ -29,8 +29,11 @@ nav:
   - Run in a container: container.md
   - Best practices: best-practices.md
   - Tools cheat sheet: tools.md
+  - Working with multiple agents: multi-agents.md
+  - Agent tracing (chemistry example): agent-tracing.md
   - Skills and MCP: skills-mcp.md
   - Models and budget: models.md
+  - Custom endpoints: endpoints.md
   - Hands-on lab: lab.md
   - Helpers: helpers.md
   - Resources: resources.md

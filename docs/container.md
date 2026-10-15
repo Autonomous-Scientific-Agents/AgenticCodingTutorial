@@ -256,6 +256,7 @@ the current endpoints and models.
 | `opencode-alcf` | `inkling-bf16` | `/models` in OpenCode, or set `ALCF_OPENCODE_MODEL` |
 
 Other endpoints: set `ALCF_ANTHROPIC_BASE_URL` (Claude Code) or `ALCF_OPENAI_BASE_URL` (Codex, OpenCode).
+To set up the tools by hand instead, see [Custom endpoints: ALCF Inference Endpoints](endpoints.md#alcf-inference-endpoints).
 Claude Code and Codex warn that they do not know these models and fall back to default settings; that is
 expected. `gpt-oss-120b` does not work with Codex on Minerva.
 
