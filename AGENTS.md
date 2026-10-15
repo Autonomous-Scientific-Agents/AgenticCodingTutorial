@@ -21,3 +21,9 @@
 - All six `{claude,codex,opencode}-{amsc,alcf}` wrappers source `bin/agent-tokens.sh` for shared token handling. Credentials arrive via environment variables (`AMSC_TOKEN`, `ALCF_AI_TOKEN`); prompts require interactive input and output.
 - OpenCode wrappers inject providers via `OPENCODE_CONFIG_CONTENT`. Shared `exec_opencode` adds `--standalone` for OpenCode 2 so its private service sees that environment; for supported subcommands the flag goes after the subcommand.
 - `Dockerfile` copies `bin/` into `/usr/local/bin/`. Container CI publishes amd64/arm64 images only on `main` changes to `Dockerfile`, `entrypoint.sh`, `bin/**`, or its workflow (or manual dispatch); host launcher edits alone do not trigger it.
+
+## Conventions
+
+- Never commit tokens or other credentials; supply them through environment variables.
+- Name pages with lowercase, hyphenated filenames. Indent Python with four spaces, YAML and shell with two; quote shell expansions and keep `set -euo pipefail`.
+- Use short, imperative commit subjects, optionally prefixed by topic (`Docs:`, `Container:`). Keep each PR to one topic and describe the change and how you validated it.
