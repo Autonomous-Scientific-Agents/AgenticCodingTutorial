@@ -27,7 +27,7 @@ _mag_host_steps() {
   in_container && where="on your host, then restart the container"
   cat >&2 <<EOF
 To have it set automatically, store the PAT $where:
-  macOS / Linux: add  export AMSC_TOKEN=<your PAT>  to ~/.zshrc or ~/.bashrc, then open a new terminal.
+  macOS / Linux: add  export AMSC_TOKEN='<your PAT>'  to ~/.zshrc or ~/.bashrc, then open a new terminal.
   Windows:       [Environment]::SetEnvironmentVariable('AMSC_TOKEN', '<your PAT>', 'User'), then open a new terminal.
 EOF
 }

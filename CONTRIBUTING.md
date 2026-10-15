@@ -30,3 +30,11 @@ uv run mkdocs serve
 ```
 
 The build runs with `--strict`, so broken internal links fail the check.
+
+## Change a launcher
+
+Run `python3 -m unittest discover -s tests -v` on Linux or macOS. The tests use a fake container engine
+and temporary terminals to check piped input, terminal allocation, argument forwarding, and exit codes.
+They do not need model credentials or a running container engine. PowerShell checks run when `pwsh` is
+installed; otherwise they are skipped. Also check changed Bash scripts with `bash -n` and exercise the
+changed command with Podman or Docker when available.

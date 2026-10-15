@@ -19,9 +19,9 @@ These steps assume a fresh computer with nothing installed. Follow the tab for y
 ends with a check; if the check works, move on.
 
 !!! tip "Easiest and safest: the tutorial container"
-    One image has Claude Code, Codex CLI, OpenCode, uv, gh, vim, emacs and VS Code in the browser. The agent only sees
-    the project folder you mount, so it cannot touch the rest of your machine. You only need Git (step 2) and
-    Podman (or Docker). See [Run in a container](container.md).
+    One image has Claude Code, Codex CLI, OpenCode, uv, gh, vim, emacs and VS Code in the browser. It mounts
+    your project and saved agent settings, and uses the credentials you supply. You only need Git (step 2)
+    and Podman (or Docker). See [Run in a container](container.md).
 
 ### What you need
 
@@ -303,7 +303,7 @@ rejects the PAT, create a new one on [myAmSC](https://my.amsc.energy.gov/dashboa
 startup file. For the terminal you have open, run `read -rs AMSC_TOKEN && export AMSC_TOKEN` and paste it.
 
 ```bash
-export AMSC_TOKEN=<your PAT>
+export AMSC_TOKEN='<your PAT>'
 ```
 
 **Use them** in your project folder like the plain agents. Options pass through:

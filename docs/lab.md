@@ -18,7 +18,7 @@ code: every prompt, tool call, failed attempt and fix.
 
 Watch a replay before you start: it shows what working with an agent really looks like, including the dead ends.
 The replays were published with the `publish-agent-trace` skill and
-[claude-replay](https://github.com/Autonomous-Scientific-Agents/claude-replay); see [Skills and MCP](skills-mcp.md).
+[claude-replay](https://github.com/Autonomous-Scientific-Agents/claude-replay); see [Skills](skills.md).
 
 ## Steps
 

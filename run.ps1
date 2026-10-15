@@ -10,6 +10,7 @@
 # agent config and login state persist in named volumes.
 #
 # Uses whichever of podman or docker is running (podman first). Force one with $env:CONTAINER_ENGINE = "docker".
+begin {
 $Image = if ($env:IMAGE) { $env:IMAGE } else { 'ghcr.io/autonomous-scientific-agents/agentic-coding:latest' }
 $Port = if ($env:PORT) { $env:PORT } else { '8080' }
 
@@ -38,7 +39,7 @@ if ($Command -eq 'build') {
 }
 
 $RunArgs = @(
-    '--rm', '-it',
+    '--rm', '-i',
     '-v', "$($PWD.Path):/workspace",
     '-v', 'ai-agents-claude:/home/dev/.claude',
     '-v', 'ai-agents-codex:/home/dev/.codex',
@@ -48,6 +49,66 @@ $RunArgs = @(
     '-v', 'ai-agents-gh:/home/dev/.config/gh',
     '-v', 'ai-agents-globus:/home/dev/.globus'
 )
+# PowerShell pipelines do not necessarily redirect the host's console handles.
+$PipelineInput = $MyInvocation.ExpectingInput
+# With pwsh -File, the host adds Out-Default; an empty invocation line identifies that case.
+$PipelineOutput = $MyInvocation.Line -and ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength)
+# > / >> redirections and captures such as $x = .\run.ps1 ... or (.\run.ps1 ...) also leave the
+# host console handles unchanged. Parse the invocation rather than matching characters in arguments.
+function Test-OutputRedirected($Command) {
+    @($Command.Redirections | Where-Object {
+        $_ -is [System.Management.Automation.Language.FileRedirectionAst] -and $_.FromStream -in @('Output', 'All')
+    }).Count -gt 0
+}
+function Find-InvocationCommand($Text, $Column) {
+    $Tokens = $null
+    $ParseErrors = $null
+    $Ast = [System.Management.Automation.Language.Parser]::ParseInput($Text, [ref]$Tokens, [ref]$ParseErrors)
+    $Ast.Find({
+        param($Node)
+        $Node -is [System.Management.Automation.Language.CommandAst] -and
+            $Node.Extent.StartLineNumber -eq 1 -and $Node.Extent.StartColumnNumber -eq $Column
+    }, $true)
+}
+function Test-OutputCaptured($Command) {
+    # Walk out from this command until its output reaches the host or something consumes it.
+    $Node = $Command
+    while ($Node.Parent) {
+        $Parent = $Node.Parent
+        if ($Node -is [System.Management.Automation.Language.CommandBaseAst] -and (Test-OutputRedirected $Node)) {
+            return $true
+        }
+        if ($Parent -is [System.Management.Automation.Language.PipelineAst] -and
+            $Parent.PipelineElements[-1] -ne $Node) { return $true }
+        if ($Node -is [System.Management.Automation.Language.PipelineAst] -and
+            $Parent -isnot [System.Management.Automation.Language.NamedBlockAst] -and
+            $Parent -isnot [System.Management.Automation.Language.StatementBlockAst]) { return $true }
+        if ($Node -is [System.Management.Automation.Language.StatementBlockAst] -and
+            ($Parent -is [System.Management.Automation.Language.SubExpressionAst] -or
+             $Parent -is [System.Management.Automation.Language.ArrayExpressionAst])) { return $true }
+        if ($Node -is [System.Management.Automation.Language.ScriptBlockExpressionAst]) {
+            # Follow only script blocks invoked in place with & { } or . { }.
+            if ($Parent -isnot [System.Management.Automation.Language.CommandAst] -or
+                $Parent.CommandElements[0] -ne $Node -or
+                $Parent.InvocationOperator -notin @('Ampersand', 'Dot')) { return $false }
+        }
+        $Node = $Parent
+    }
+    $false
+}
+if ($MyInvocation.Line) {
+    $InvocationCommand = Find-InvocationCommand $MyInvocation.Line $MyInvocation.OffsetInLine
+    if ($InvocationCommand -and (Test-OutputCaptured $InvocationCommand)) { $PipelineOutput = $true }
+}
+# PowerShell 7.4+ also gives the whole statement, including redirections on continuation lines.
+if ($MyInvocation.Statement) {
+    $InvocationCommand = Find-InvocationCommand $MyInvocation.Statement 1
+    if ($InvocationCommand -and (Test-OutputRedirected $InvocationCommand)) { $PipelineOutput = $true }
+}
+if (-not $PipelineInput -and -not $PipelineOutput -and
+    -not [Console]::IsInputRedirected -and -not [Console]::IsOutputRedirected) {
+    $RunArgs += '-t'
+}
 
 # Commit as you: use your git name and email unless GIT_AUTHOR_*/GIT_COMMITTER_* are already set.
 if (Get-Command git -ErrorAction SilentlyContinue) {
@@ -93,12 +154,29 @@ if ("$(& $Engine --version 2>$null)" -like 'podman*' -and
     $RunArgs += '--userns=keep-id:uid=1000,gid=1000'
 }
 
+$ContainerArgs = @($args)
 if ($Command -eq 'code') {
     # Bound to localhost on the host only, so no password is needed.
-    & $Engine run @RunArgs -p "127.0.0.1:${Port}:8080" $Image `
-        code-server --bind-addr 0.0.0.0:8080 --auth none --disable-telemetry @Rest /workspace
-    exit $LASTEXITCODE
+    $RunArgs += '-p', "127.0.0.1:${Port}:8080"
+    $ContainerArgs = @('code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry') +
+        $Rest + @('/workspace')
 }
 
-& $Engine run @RunArgs $Image @args
-exit $LASTEXITCODE
+if ($PipelineInput) {
+    # Keep one native process alive across pipeline records instead of collecting $input.
+    $EnginePipeline = { & $Engine run @RunArgs $Image @ContainerArgs }.GetSteppablePipeline()
+    $EnginePipeline.Begin($true)
+} else {
+    & $Engine run @RunArgs $Image @ContainerArgs
+    exit $LASTEXITCODE
+}
+}
+
+process {
+    if ($PipelineInput) { $EnginePipeline.Process($_) }
+}
+
+end {
+    if ($PipelineInput) { $EnginePipeline.End() }
+    exit $LASTEXITCODE
+}

@@ -12,7 +12,7 @@ Build with tests, make it fast, give it a face.
 ## What you will be able to do
 
 1. Run a coding agent (Claude Code, Codex CLI, OpenCode, Cursor or Kilo Code) on a real repository.
-2. Steer it with four layers: instructions (`AGENTS.md` or `CLADUE.md`), skills (`SKILL.md`), memory and permissions.
+2. Steer it with four layers: instructions (`AGENTS.md` or `CLAUDE.md`), skills (`SKILL.md`), memory and permissions.
 3. Let tests be the stopping rule, so "done" means the tests pass, not that the agent says so.
 4. Go from correct, to fast, to usable, see hands-on demos of the session.
 
@@ -20,11 +20,13 @@ Build with tests, make it fast, give it a face.
 
 - [Getting started](getting-started.md): pick one tool and begin.
 - [Shell setup](shell-setup.md): switch Claude Code between MAG and ALCF from bash or zsh, on any Linux machine or supercomputer.
-- [Run in a container](container.md): every tool and editor in one image; the agent only sees your project.
+- [Run in a container](container.md): every tool and editor in one image, with your project and saved settings mounted.
 - [Best practices](best-practices.md): the habits and the evidence behind them.
 - [Tools cheat sheet](tools.md): the same move in each tool.
 - [Working with multiple agents](multi-agents.md): divide work, run sessions in parallel, integrate.
-- [Skills and MCP](skills-mcp.md): extend the agent with procedures and tools; where to find good ones.
+- [Skills](skills.md): procedures the agent follows when a task calls for them; where to find good ones, including Genesis Skills.
+- [MCP servers](mcp.md): connect the agent to tools and data, such as current docs, a browser or GitHub.
+- [Hooks](hooks.md): commands that always run at set points, such as formatting after every edit.
 - [Models and budget](models.md): how to choose, and how to see what you spend.
 - [Custom endpoints](endpoints.md): argo-proxy, argo-shim and ALCF Inference Endpoints.
 - [Hands-on demo](lab.md): demo repositories.
