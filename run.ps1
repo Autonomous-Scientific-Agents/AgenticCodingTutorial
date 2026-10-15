@@ -53,19 +53,57 @@ $RunArgs = @(
 $PipelineInput = $MyInvocation.ExpectingInput
 # With pwsh -File, the host adds Out-Default; an empty invocation line identifies that case.
 $PipelineOutput = $MyInvocation.Line -and ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength)
-# PowerShell's > / >> redirections also leave the host console handles unchanged.
-# Parse the invocation rather than matching > characters in quoted command arguments.
-if ($MyInvocation.Statement) {
+# > / >> redirections and captures such as $x = .\run.ps1 ... or (.\run.ps1 ...) also leave the
+# host console handles unchanged. Parse the invocation rather than matching characters in arguments.
+function Test-OutputRedirected($Command) {
+    @($Command.Redirections | Where-Object {
+        $_ -is [System.Management.Automation.Language.FileRedirectionAst] -and $_.FromStream -in @('Output', 'All')
+    }).Count -gt 0
+}
+function Find-InvocationCommand($Text, $Column) {
     $Tokens = $null
     $ParseErrors = $null
-    $InvocationAst = [System.Management.Automation.Language.Parser]::ParseInput(
-        $MyInvocation.Statement, [ref]$Tokens, [ref]$ParseErrors)
-    $OutputRedirections = $InvocationAst.FindAll({
+    $Ast = [System.Management.Automation.Language.Parser]::ParseInput($Text, [ref]$Tokens, [ref]$ParseErrors)
+    $Ast.Find({
         param($Node)
-        $Node -is [System.Management.Automation.Language.FileRedirectionAst] -and
-            $Node.FromStream -in @('Output', 'All')
-    }, $false)
-    $PipelineOutput = $PipelineOutput -or $OutputRedirections.Count -gt 0
+        $Node -is [System.Management.Automation.Language.CommandAst] -and
+            $Node.Extent.StartLineNumber -eq 1 -and $Node.Extent.StartColumnNumber -eq $Column
+    }, $true)
+}
+function Test-OutputCaptured($Command) {
+    # Walk out from this command until its output reaches the host or something consumes it.
+    $Node = $Command
+    while ($Node.Parent) {
+        $Parent = $Node.Parent
+        if ($Node -is [System.Management.Automation.Language.CommandBaseAst] -and (Test-OutputRedirected $Node)) {
+            return $true
+        }
+        if ($Parent -is [System.Management.Automation.Language.PipelineAst] -and
+            $Parent.PipelineElements[-1] -ne $Node) { return $true }
+        if ($Node -is [System.Management.Automation.Language.PipelineAst] -and
+            $Parent -isnot [System.Management.Automation.Language.NamedBlockAst] -and
+            $Parent -isnot [System.Management.Automation.Language.StatementBlockAst]) { return $true }
+        if ($Node -is [System.Management.Automation.Language.StatementBlockAst] -and
+            ($Parent -is [System.Management.Automation.Language.SubExpressionAst] -or
+             $Parent -is [System.Management.Automation.Language.ArrayExpressionAst])) { return $true }
+        if ($Node -is [System.Management.Automation.Language.ScriptBlockExpressionAst]) {
+            # Follow only script blocks invoked in place with & { } or . { }.
+            if ($Parent -isnot [System.Management.Automation.Language.CommandAst] -or
+                $Parent.CommandElements[0] -ne $Node -or
+                $Parent.InvocationOperator -notin @('Ampersand', 'Dot')) { return $false }
+        }
+        $Node = $Parent
+    }
+    $false
+}
+if ($MyInvocation.Line) {
+    $InvocationCommand = Find-InvocationCommand $MyInvocation.Line $MyInvocation.OffsetInLine
+    if ($InvocationCommand -and (Test-OutputCaptured $InvocationCommand)) { $PipelineOutput = $true }
+}
+# PowerShell 7.4+ also gives the whole statement, including redirections on continuation lines.
+if ($MyInvocation.Statement) {
+    $InvocationCommand = Find-InvocationCommand $MyInvocation.Statement 1
+    if ($InvocationCommand -and (Test-OutputRedirected $InvocationCommand)) { $PipelineOutput = $true }
 }
 if (-not $PipelineInput -and -not $PipelineOutput -and
     -not [Console]::IsInputRedirected -and -not [Console]::IsOutputRedirected) {
