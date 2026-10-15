@@ -26,6 +26,7 @@ theme:
 nav:
   - Home: index.md
   - Getting started: getting-started.md
+  - Shell setup: shell-setup.md
   - Run in a container: container.md
   - Best practices: best-practices.md
   - Tools cheat sheet: tools.md
