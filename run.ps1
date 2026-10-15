@@ -38,7 +38,7 @@ if ($Command -eq 'build') {
 }
 
 $RunArgs = @(
-    '--rm', '-it',
+    '--rm', '-i',
     '-v', "$($PWD.Path):/workspace",
     '-v', 'ai-agents-claude:/home/dev/.claude',
     '-v', 'ai-agents-codex:/home/dev/.codex',
@@ -48,6 +48,14 @@ $RunArgs = @(
     '-v', 'ai-agents-gh:/home/dev/.config/gh',
     '-v', 'ai-agents-globus:/home/dev/.globus'
 )
+# PowerShell pipelines do not necessarily redirect the host's console handles.
+$PipelineInput = $MyInvocation.ExpectingInput
+# With pwsh -File, the host adds Out-Default; an empty invocation line identifies that case.
+$PipelineOutput = $MyInvocation.Line -and ($MyInvocation.PipelinePosition -lt $MyInvocation.PipelineLength)
+if (-not $PipelineInput -and -not $PipelineOutput -and
+    -not [Console]::IsInputRedirected -and -not [Console]::IsOutputRedirected) {
+    $RunArgs += '-t'
+}
 
 # Commit as you: use your git name and email unless GIT_AUTHOR_*/GIT_COMMITTER_* are already set.
 if (Get-Command git -ErrorAction SilentlyContinue) {
@@ -93,12 +101,17 @@ if ("$(& $Engine --version 2>$null)" -like 'podman*' -and
     $RunArgs += '--userns=keep-id:uid=1000,gid=1000'
 }
 
+$ContainerArgs = @($args)
 if ($Command -eq 'code') {
     # Bound to localhost on the host only, so no password is needed.
-    & $Engine run @RunArgs -p "127.0.0.1:${Port}:8080" $Image `
-        code-server --bind-addr 0.0.0.0:8080 --auth none --disable-telemetry @Rest /workspace
-    exit $LASTEXITCODE
+    $RunArgs += '-p', "127.0.0.1:${Port}:8080"
+    $ContainerArgs = @('code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry') +
+        $Rest + @('/workspace')
 }
 
-& $Engine run @RunArgs $Image @args
+if ($PipelineInput) {
+    $input | & $Engine run @RunArgs $Image @ContainerArgs
+} else {
+    & $Engine run @RunArgs $Image @ContainerArgs
+}
 exit $LASTEXITCODE

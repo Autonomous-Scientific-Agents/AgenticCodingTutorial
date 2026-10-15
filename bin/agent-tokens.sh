@@ -29,7 +29,7 @@ _mag_host_steps() {
   in_container && where="on your host, then restart the container"
   cat >&2 <<EOF
 To have it set automatically, store the PAT $where:
-  macOS / Linux: add  export AMSC_TOKEN=<your PAT>  to ~/.zshrc or ~/.bashrc, then open a new terminal.
+  macOS / Linux: add  export AMSC_TOKEN='<your PAT>'  to ~/.zshrc or ~/.bashrc, then open a new terminal.
   Windows:       [Environment]::SetEnvironmentVariable('AMSC_TOKEN', '<your PAT>', 'User'), then open a new terminal.
 EOF
 }
@@ -64,7 +64,7 @@ require_amsc_token() {
       exit 1
     fi
     _mag_ask || { echo "$_cmd: no valid PAT." >&2; exit 1; }
-    if in_container; then echo "Using this PAT until the container stops." >&2; else echo "Using this PAT for this run only." >&2; fi
+    echo "Using this PAT for this agent run only; later launches will ask again." >&2
     _mag_host_steps
   elif _interactive && [[ "$(_mag_check "$AMSC_TOKEN")" =~ ^40[13]$ ]]; then
     echo "$_cmd: MAG rejected AMSC_TOKEN; PATs are short-lived, so it has probably expired." >&2

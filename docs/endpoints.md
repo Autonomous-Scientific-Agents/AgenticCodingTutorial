@@ -226,7 +226,8 @@ Public open-weight models on Argonne hardware (Sophia, Metis, Minerva). Authenti
 Install authentication tools:
 
 ```bash
-uv tool install alcf-ai alcf-tokens
+uv tool install alcf-tokens
+uv tool install alcf-ai
 ```
 
 Or `pip install alcf-ai alcf-tokens`.
@@ -332,7 +333,7 @@ Add to `~/.claude/settings.json`:
 ```json
 {
   "env": {
-    "ANTHROPIC_BASE_URL": "https://inference-api.alcf.anl.gov/resource_server/minerva/api/v1",
+    "ANTHROPIC_BASE_URL": "https://inference-api.alcf.anl.gov/resource_server/minerva/api",
     "ANTHROPIC_AUTH_TOKEN": "<your-alcf-token>",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "inkling-bf16",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "inkling-bf16",
@@ -341,7 +342,8 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-Or use `alcf-tokens` to keep tokens fresh:
+Claude Code appends `/v1/messages`, so its base URL ends at `/api`. A token pasted into this file expires;
+replace it when necessary. To configure automatic token retrieval through `alcf-tokens`, use:
 
 ```bash
 alcf-ai agent configure claude
